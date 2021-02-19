@@ -279,7 +279,15 @@ void debug_led_control(uint8_t state)
 	 MAIN_LED_GPIO_Port->BSRR = (uint32_t)MAIN_LED_Pin;
 	}
 }
+static void send_door_status_msg(void)
+{
+	uint8_t send_buff[8] = {0};
 
+	send_buff[1] = get_door_state();	//门状态
+	send_buff[0] = BOX_SUCCESS;
+	//can_send_one_pkg_to_Android_by_link(BOX_Android_UP_DOOR_STATUS, 0, send_buff, 2);
+	can_upload_event_to_android(BOX_Android_UP_DOOR_STATUS, send_buff, 2);
+} 
 /*==================================================================================
 * 函 数 名： box_loop_door_status_task
 * 参    数： None
@@ -296,27 +304,10 @@ void loop_door_status_task(void* argv)
 	if(doorStateBak !=READ_HALL_STATUE())
 	{
 		doorStateBak = READ_HALL_STATUE();
-		EnableTask(TASK_REPORT_DOOR_STA);//使能门状态变化上报任务
+		send_door_status_msg();
 	}
 }
 
-/*==================================================================================
-* 函 数 名： box_report_status_task
-* 参    数： None
-* 功能描述:  box主动上报状态信息
-* 返 回 值： None
-* 备    注： 
-* 作    者： lc
-* 创建时间： 2021-02-07 141233
-==================================================================================*/
-void box_report_status_task(void* argv)
-{
-	uint8_t send_buff[8] = {0};
-
-	send_buff[1] = get_door_state();	//门状态
-	send_buff[0] = BOX_SUCCESS;
-	can_send_one_pkg_to_Android_by_link(BOX_Android_UP_DOOR_STATUS, 0, send_buff, 2);
-}
 
 /*==================================================================================
 * 函 数 名： box_report_check_task
@@ -327,7 +318,7 @@ void box_report_status_task(void* argv)
 * 作    者： lc
 * 创建时间： 2021-02-07 141233
 ==================================================================================*/
-void box_report_check_task(void* argv)
+void box_report_check_status(void)
 {
 	uint8_t send_buff[8] = {0};
 
@@ -343,7 +334,8 @@ void box_report_check_task(void* argv)
 	else
 		checkStatus &= ~(get_rfid_status()<<Rfid_bit); 
 	
-	can_send_one_pkg_to_Android_by_link(BOX_Android_UP_DOOR_STATUS, 0, &checkStatus, 1);
+	//can_send_one_pkg_to_Android_by_link(BOX_Android_UP_DOOR_STATUS, 0, &checkStatus, 1);
+	can_upload_event_to_android(BOX_Android_UP_CHECK_STATUS, &checkStatus, 1);
 }
  /*==================================================================================
 * 函 数 名： box_report_check_task

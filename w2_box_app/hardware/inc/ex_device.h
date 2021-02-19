@@ -72,5 +72,6 @@ ret_msg_t led_control(uint8_t state,uint8_t bright);
 ret_msg_t temp_control(uint8_t state,uint8_t temp);
 void led_change(void);//更改LED亮度调节因数
 uint8_t get_box_checkStatus(void);
+void box_report_check_status(void);
 																					
 #endif

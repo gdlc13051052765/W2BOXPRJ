@@ -177,14 +177,12 @@ void can_frame_parse(void* ret_msg)
 			case BOX_Android_UP_DOOR_STATUS:
 			{
 				debug_print("BOX_Android_UP_DOOR_STATUS \r\n");
-				DisableTask(TASK_REPORT_DOOR_STA);//disable门状态变化上报任务
 				can1_msg_queue_pop(pmsg->ex_id._bit.msg_id);
 				break;
 			}
 			case BOX_Android_UP_CHECK_STATUS:
 			{
 				debug_print("BOX_Android_UP_CHECK_STATUS \r\n");
-				DisableTask(TASK_REPORT_CHECK);//disable自检状态上报任务
 				can1_msg_queue_pop(pmsg->ex_id._bit.msg_id);
 				break;
 			}
@@ -213,8 +211,7 @@ void can_frame_parse(void* ret_msg)
 			{
 				config_mcan_addr(pmsg->data[0],pmsg->data[1]);
 				MX_CAN_Init(mApp_Param.cc_can_addr, mApp_Param.can_addr);//重新分配地址时，需要重新初始化过滤器
-				
-				EnableTask(TASK_REPORT_CHECK);//使能自检状态上报任务
+				box_report_check_status();//主动上报自检状态
 				debug_print("CC_BOX_ASSIGNED_ADDR \r\n");
 				break;
 			}

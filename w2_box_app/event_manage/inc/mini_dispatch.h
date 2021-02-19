@@ -28,8 +28,6 @@ typedef enum _TASK_LIST
 	TASK_RFID_READ,							//rfid读卡
 	TASK_ADC_CONV,							//ADC转换
 	TASK_LOOP_DOOR,							//定时查询门状态
-	TASK_REPORT_DOOR_STA,				//门状态发生变化主动上报
-	TASK_REPORT_CHECK,					//主动上报自检状态
 	TASK_SED_TAG_INFO,					//发送卡片信息
 	
 	TASK_TEST_LOOP,							//循环测试任务

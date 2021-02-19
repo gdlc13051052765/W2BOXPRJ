@@ -400,7 +400,7 @@ void compare_all_tag(void *info,  rfalNfcvListenDevice* cards, uint8_t card_num)
 	uint8_t block_buff[16];  /* Flags + Block Data + CRC */
 	uint16_t read_block_len = 0;
 
-	if(pmsg -> total_tag_num == 0)	//如果没有一个标签，直接存储
+	if(pmsg ->total_tag_num == 0)	//如果没有一个标签，直接存储
 	{
 		CLEAR_TAG_CSTM_ID(0x0F);	//清空步进值
 		 
@@ -497,7 +497,7 @@ void scan_rfid_tag(void)
 {
 	platformDelay(10);//可减少延时？？	
 
-  	rfid_find_tag(&mTag_Context);
+  rfid_find_tag(&mTag_Context);
 }
 
 /*==================================================================================

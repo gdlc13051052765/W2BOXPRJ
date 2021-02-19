@@ -8,7 +8,7 @@ extern void  rfid_loop_read_task(void *argv); 	//读卡
 extern void test_loop_task(void* argv);
 extern void box_report_status_task(void* argv);
 extern void loop_door_status_task(void* argv);
-extern void box_report_check_task(void* argv);
+
 /*==================================================================================
 * 函 数 名： TaskComps
 * 参    数： None
@@ -24,8 +24,6 @@ TASK_COMPONENTS TaskComps[] =
 	{0, TASK_ENABLE, 100, 100, rfid_loop_read_task},          //优先级 3
 	{0, TASK_ENABLE, 1000, 1000, adc_scan_loop_task},         //优先级 4
 	{0, TASK_ENABLE, 300, 300, loop_door_status_task},       //定时查询门状态
-	{0, TASK_DISABLE, 300, 300, box_report_status_task},      //BOX主动上报门状态
-	{0, TASK_DISABLE, 300, 300, box_report_check_task},       //BOX主动自检状态
 	{0, TASK_DISABLE, 300, 300, test_loop_task},            	//循环测试任务
 };
 
