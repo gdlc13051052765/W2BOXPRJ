@@ -1,6 +1,6 @@
 #include "command.h"
 #include "includes.h"
-
+#include "oled_interface.h"
 #include "iap_protocols.h"
 
 extern _App_Param mApp_Param;
@@ -23,10 +23,13 @@ static void iap_simply_ack(uint32_t can_id, uint8_t ret_reuslt, uint16_t ret_id)
 void can_frame_parse(void* ret_msg)
 {
 	_pRet_Msg pmsg = ret_msg;
+	_Disp_Param dispStr;
 	uint16_t ret_id = 0;
+	uint16_t flash_addr = 0;
 	uint8_t ret_s = 0;
 	
 	uint8_t buff[8] = {0};
+	uint8_t picbuff[128] = {0xff};
 	//判断数据合法性
 	debug_print("can_rev,");
 	debug_print("png_cmd:%4x, ", pmsg->ex_id._bit.png_cmd);
@@ -109,16 +112,43 @@ void can_frame_parse(void* ret_msg)
 			}
 			case Android_BOX_FLASH_UPDATE:
 			{
+				flash_addr =  *(__IO uint16_t*)(&(pmsg->data[0]));
+				pOled_Func->updataPic_opt(&(pmsg->data[2]),&flash_addr);
 				debug_print("Android_BOX_FLASH_UPDATE \r\n");
 				break;
 			}
 			case Android_BOX_DISPLAY_DATA:
 			{
+				dispStr.id = pmsg->data[0];
+				dispStr.startRow = pmsg->data[1];
+				dispStr.startCol = pmsg->data[2];
+				dispStr.dispLen = pmsg->byte_count;
+				memcpy(dispStr.data,pmsg->data+3,pmsg->byte_count);
+				
+				pOled_Func->directlyDisp_opt(dispStr);
 				debug_print("Android_BOX_DISPLAY_DATA \r\n");
 				break;
 			}
 			case Android_BOX_DISPLAY_FLASH:
 			{
+				dispStr.id = pmsg->data[0];
+				dispStr.cmd = pmsg->data[1];
+				dispStr.startRow = pmsg->data[2];
+				dispStr.startCol = pmsg->data[3];
+				if(dispStr.cmd ==0x03)
+				{
+					dispStr.fontSize = pmsg->data[4];
+					dispStr.dispLen = pmsg->data[5];
+					memcpy(dispStr.data,pmsg->data+6,dispStr.dispLen);
+				}
+				else
+				{
+					dispStr.endRow = pmsg->data[4];
+					dispStr.endCol = pmsg->data[5];
+					dispStr.dispAddr =  *(__IO uint32_t*)(&(pmsg->data[6]));
+				}
+			
+				pOled_Func->dispPic_opt(dispStr);
 				debug_print("Android_BOX_DISPLAY_FLASH \r\n");
 				break;
 			}

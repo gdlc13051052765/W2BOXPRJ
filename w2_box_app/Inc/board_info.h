@@ -16,6 +16,7 @@
 #define   APP_START_ADDR			(0x08003000)					//用户程序起始地址
 #define   APP_CACHE_ADDR			(0x00)							//升级程序缓存地址
 #define   IAP_FLAG_ADDR				(0x08002000)					//升级跳转标志
+#define   OLED_PIC_ADDR				(0x020000)					//外部flash存储图片的起始地址
 
 
 #endif

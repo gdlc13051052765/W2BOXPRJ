@@ -1,6 +1,7 @@
 #include "oled_drv.h"
 #include "includes.h"
 
+
 static _Screen_Info mScreen_Info[MAX_SCREEN_NUM];
 
 static _pSpi_Class pScreen_R =  &mSpi_Class[oled_1];
@@ -350,7 +351,15 @@ void screen_show_string(_pFont_Info pmsg)
 	}
 	
 	//字体选择
-	if(pmsg->font_size == FONT_16)		//16号
+	if(pmsg->font_size == FONT_12)		//12号
+	{ 
+		hz_size = 12;
+		ascii_size = 12;
+		ascii_type = ASCII_12_A;
+		
+		p_func = gt_12_GetData;	//汉字获取接口
+	}
+	else if(pmsg->font_size == FONT_16)		//16号
 	{ 
 		hz_size = 16;
 		ascii_size = 16;
@@ -641,6 +650,29 @@ unsigned char BMP2[] =
 };
 
 /*==================================================================================
+* 函 数 名： oleddrv_disp
+* 参    数： None
+* 功能描述:  OLED刷新数据
+* 返 回 值： None
+* 备    注： SSD1315
+* 作    者： lc
+* 创建时间： 2021-02-22 132006
+==================================================================================*/
+void oleddrv_disp(_Disp_Param pmsg )
+{
+	_Font_Info mFont_Info = _FONT_INIT();
+	
+	mFont_Info.x = pmsg.startCol;
+	mFont_Info.y = pmsg.startRow;
+	mFont_Info.p_text = pmsg.data;
+	mFont_Info.font_size = pmsg.fontSize;
+	screen_show_string(&mFont_Info);
+	mFont_Info.screen = pmsg.id;
+	screen_show_string(&mFont_Info);
+	
+	screen_refresh_all(); //刷新显示 
+}
+/*==================================================================================
 * 函 数 名： main_oled_test
 * 参    数： None
 * 功能描述:  OLED和字库测试函数
@@ -651,25 +683,51 @@ unsigned char BMP2[] =
 ==================================================================================*/
 void main_oled_test()
 {
-	unsigned char jtwb[128]="ABC寻缺另";	//每个中文字符实际由两个字节组成, 对应GBK等编码
- 
+	unsigned char jtwb[128]="Abcdefghijk菜名:宫保鸡丁";	//每个中文字符实际由两个字节组成, 对应GBK等编码
+  uint8_t size =FONT_16;
+	
 	oled_gt_init();
 	
 	_Font_Info mFont_Info = _FONT_INIT();
 
 	//汉字显示测试
 	mFont_Info.p_text = jtwb;
+	mFont_Info.font_size = size;
 	screen_show_string(&mFont_Info);
 	mFont_Info.screen = SCREEN_RIGHT;
 	screen_show_string(&mFont_Info);
+	
+	screen_refresh_all(); //刷新显示 
+//	
+//	mFont_Info.x = 0;
+//	mFont_Info.y = 0;
+//	mFont_Info.p_text = jtwb;
+//	screen_show_string(&mFont_Info);
+//	mFont_Info.screen = SCREEN_LEFT;
+//	screen_show_string(&mFont_Info);
+//	
+//	mFont_Info.y = 16;
+//	mFont_Info.p_text = jtwb;
+//	screen_show_string(&mFont_Info);
+//	mFont_Info.screen = SCREEN_LEFT;
+//	screen_show_string(&mFont_Info);
+//	
+//	mFont_Info.y = 32;
+//	mFont_Info.p_text = jtwb;
+//	screen_show_string(&mFont_Info);
+//	mFont_Info.screen = SCREEN_LEFT;
+//	screen_show_string(&mFont_Info);
+	
 	screen_refresh_all(); //刷新显示 
 	
-	HAL_Delay(1000);
+	HAL_Delay(10000);
 	
-	//图片显示测试
-	screen_show_bmp(SCREEN_RIGHT,0,0,128,8,BMP1,1);
-	screen_show_bmp(SCREEN_LEFT,0,0,128,8,BMP2,1);
+	
+//	//图片显示测试
+//	screen_show_bmp(SCREEN_RIGHT,0,0,128,8,BMP1,1);
+//	screen_show_bmp(SCREEN_LEFT,0,0,128,8,BMP2,1);
 	//	screen_show_bmp(0, )
+	while(1);
 }
 
 

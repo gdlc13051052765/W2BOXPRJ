@@ -262,6 +262,7 @@ uint8_t can_recv_signal_frame(CAN_HandleTypeDef hcan, void *can_msg)
 * 作    者： xiaozh
 * 创建时间： 2019-10-28 154449
 ==================================================================================*/ 
+static uint8_t datalen = 0;
 uint8_t can_pop_one_frame(CAN_HandleTypeDef hcan, void *ret_msg)
 {
 	_Can_Instance * mCan_Instance;
@@ -291,6 +292,7 @@ uint8_t can_pop_one_frame(CAN_HandleTypeDef hcan, void *ret_msg)
 	if(	mCan_Instance->p_ffunc->pop(mCan_Instance->Rcv_Fifo, ret_msg) != 0) 
 	{
 		//查找成功
+		datalen = pmsg->byte_count;
 		return pmsg->byte_count;
 	}
 	

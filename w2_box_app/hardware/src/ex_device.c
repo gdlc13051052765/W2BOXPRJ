@@ -285,7 +285,6 @@ static void send_door_status_msg(void)
 
 	send_buff[1] = get_door_state();	//门状态
 	send_buff[0] = BOX_SUCCESS;
-	//can_send_one_pkg_to_Android_by_link(BOX_Android_UP_DOOR_STATUS, 0, send_buff, 2);
 	can_upload_event_to_android(BOX_Android_UP_DOOR_STATUS, send_buff, 2);
 } 
 /*==================================================================================
@@ -307,8 +306,6 @@ void loop_door_status_task(void* argv)
 		send_door_status_msg();
 	}
 }
-
-
 /*==================================================================================
 * 函 数 名： box_report_check_task
 * 参    数： None
@@ -337,19 +334,21 @@ void box_report_check_status(void)
 	//can_send_one_pkg_to_Android_by_link(BOX_Android_UP_DOOR_STATUS, 0, &checkStatus, 1);
 	can_upload_event_to_android(BOX_Android_UP_CHECK_STATUS, &checkStatus, 1);
 }
- /*==================================================================================
-* 函 数 名： box_report_check_task
+/*==================================================================================
+* 函 数 名： get_box_checkStatus
 * 参    数： None
-* 功能描述:  box主动上报自检状态信息
+* 功能描述:  查询自检状态信息
 * 返 回 值： None
 * 备    注： 
 * 作    者： lc
 * 创建时间： 2021-02-07 141233
-==================================================================================*/
+===================================================================================*/
 uint8_t get_box_checkStatus(void)
 {
 	return checkStatus;
 }
+
+
 void ex_device_test()
 {
 	HAL_Delay(5000);

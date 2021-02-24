@@ -33,7 +33,7 @@ typedef enum
 	Android_BOX_CONTROL_BEEP,
 	Android_BOX_UPDATE,
 	Android_BOX_FLASH_UPDATE,
-	Android_BOX_DISPLAY_DATA,
+	Android_BOX_DISPLAY_DATA,//0x2B
 	Android_BOX_DISPLAY_FLASH,
 	Android_BOX_CHECK,
 	//升级操作

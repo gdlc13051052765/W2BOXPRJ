@@ -1,6 +1,7 @@
 #ifndef  __OLED_DRV_H
 #define  __OLED_DRV_H
 #include "spi_class.h"
+#include "oled_interface.h"
 
 #define MAX_SCREEN_NUM			2			//×î´óÆÁÄ»ÊýÁ¿
 
@@ -12,6 +13,7 @@
 
 typedef  enum
 {
+	FONT_12 = 12,		//12*12  12ºÅ×Ö
 	FONT_16 = 16,		//16*16  16ºÅ×Ö
 	FONT_24 = 24,		//24*24	 24ºÅ×Ö
 	FONT_32 = 32,		//32*32	 32ºÅ×Ö
@@ -63,5 +65,6 @@ typedef  unsigned long  (*gt_get_func)(uint8_t , uint8_t, uint8_t, uint8_t, uint
 	
 void oled_gt_init(void);
 void show_read_tag(uint8_t read_num, uint8_t real_num);
-
+void oleddrv_disp(_Disp_Param pmsg );
+void screen_show_bmp(uint8_t screen, uint8_t x_s, uint8_t y_s, uint8_t x_e, uint8_t y_e, uint8_t *c_buff, uint8_t color);
 #endif
