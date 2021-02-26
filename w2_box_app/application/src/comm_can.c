@@ -281,7 +281,7 @@ uint8_t can_pop_one_frame(CAN_HandleTypeDef hcan, void *ret_msg)
 			pmsg->ex_id.EX_ID = mMutil_Ring[i].ex_id.EX_ID;
 			pmsg->byte_count = mMutil_Ring[i].r_len;
 			memcpy(pmsg->data, mMutil_Ring[i].r_data,  mMutil_Ring[i].r_len);
-
+			datalen = pmsg->byte_count;
 			//Çå¿Õ½Úµã
 			delete_item_node(hcan, i);
 			return pmsg->byte_count;

@@ -465,8 +465,8 @@ static uint8_t iap_frame_data(const uint8_t* src_buff, uint16_t *ret_result)
 		 pmsg->DataFrame.SoftVer == mIap_Param.fw_msg.MsgFrame.AppVer)
 	{
 			mIap_Param.frame_step++;	//自己计算帧ID，
-//				mIap_Param.frame_step = pmsg->DataFrame.FrameStep;	//拷贝帧ID
-		    return write_firware(w_addr, src_buff, FRAME_LENGTH);
+			//mIap_Param.frame_step = pmsg->DataFrame.FrameStep;	//拷贝帧ID
+			return write_firware(w_addr, src_buff, FRAME_LENGTH);
 	}
 	else
 	{
@@ -580,8 +580,6 @@ static uint8_t iap_reset_system(void)
 	write_flag_to_iap();
 
 	HAL_NVIC_SystemReset();
-	
-
 	
 	while(1);	//等待复位完成
 } 

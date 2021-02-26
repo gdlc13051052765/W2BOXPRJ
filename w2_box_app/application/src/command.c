@@ -145,6 +145,7 @@ void can_frame_parse(void* ret_msg)
 				{
 					dispStr.endRow = pmsg->data[4];
 					dispStr.endCol = pmsg->data[5];
+					pmsg->data[9] = 0;
 					dispStr.dispAddr =  *(__IO uint32_t*)(&(pmsg->data[6]));
 				}
 			

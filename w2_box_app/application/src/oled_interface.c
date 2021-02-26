@@ -5,8 +5,8 @@
 #include "gt32l_drv.h"
 
 static void oled_init(void);
-static uint8_t oled_load_picture_exflash(uint8_t *data,uint16_t *addr);
-static void oled_disp_flash_picture(_Disp_Param pmsg);
+static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr);
+static void oled_disp_flash_picture(_Disp_Param);
 static void oled_directry_disp(_Disp_Param pmsg);
 	
 _Oled_Param mOled_Param = 
@@ -70,31 +70,32 @@ uint8_t oled_picture_compare(const uint8_t *src_buff, const uint8_t *rev_buff, u
 * 作    者： lc
 * 创建时间： 2021-02-20 025540
 ==================================================================================*/
-static uint8_t oled_load_picture_exflash(uint8_t *data,uint16_t *addr)
+static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 {
 	uint32_t nAddress = *addr*MAX_DISP_LEN +OLED_PIC_ADDR;	
-	uint8_t r_buff[MAX_DISP_LEN+2] = {0};
+	uint8_t r_buff[MAX_DISP_LEN] = {0};
 	uint8_t try_count =3;
 	
+	//memcpy(r_buff,data,MAX_DISP_LEN);
 	//mOled_Param.w_flash->erase(nAddress,MAX_DISP_LEN);	
 	printf("write data==");
-	for(int i=0;i<8;i++)
+	for(int i=0;i<MAX_DISP_LEN;i++)
 		printf("%2X ",data[i]);
 	printf("\r\n");
 
 	if(nAddress%GT32L32_FLASH_SECTOR_SIZE == 0)
 	{
 		mOled_Param.w_flash->erase(nAddress,MAX_DISP_LEN);
+		HAL_Delay(50);//不加延时flash写失败
 	}
-	HAL_Delay(50);//不加延时flash写失败
-	
+
 	do{
 			if(mOled_Param.w_flash->write(nAddress, data, MAX_DISP_LEN) == 0x01)
 			{
 				if(mOled_Param.r_flash->read(nAddress,r_buff, MAX_DISP_LEN) == 0x01)
 				{
 					printf("read dara==");
-					for(int i=0;i<8;i++)
+					for(int i=0;i<MAX_DISP_LEN;i++)
 						printf("%2X ",r_buff[i]);
 					printf("\r\n");
 					if(oled_picture_compare(r_buff, data, MAX_DISP_LEN) == 0x01)
@@ -130,13 +131,24 @@ static void oled_directry_disp(_Disp_Param pmsg)
 * 作    者： lc
 * 创建时间： 2021-02-22 025540
 ==================================================================================*/
-static void oled_disp_flash_picture(_Disp_Param pmsg)
+static void oled_disp_flash_picture(_Disp_Param pmsg )
 {
+	uint16_t bmplen=0;
+  uint8_t bmpdata[1024];
+	uint32_t nAddress = pmsg.dispAddr*MAX_DISP_LEN +OLED_PIC_ADDR;	
+	
 	switch(pmsg.cmd )
 	{
 		case 01://显示灰度图		
 		case 02://显示黑白图
-			screen_show_bmp(pmsg.id ,pmsg.startRow, pmsg.startCol, pmsg.endRow, pmsg.endCol, pmsg.data, 1);
+			if((pmsg.endCol>pmsg.startCol )&&(pmsg.endRow >pmsg.startRow))
+			{
+				bmplen = ((pmsg.endCol - pmsg.startCol)  * (pmsg.endRow - pmsg.startRow));
+				if(mOled_Param.r_flash->read(nAddress,bmpdata, bmplen) == 0x01)
+				{
+					screen_show_bmp(pmsg.id ,pmsg.startCol, pmsg.startRow, pmsg.endCol, pmsg.endRow, bmpdata, 1);
+				}
+			}
 		break;
 		
 		case 03://显示字符串
