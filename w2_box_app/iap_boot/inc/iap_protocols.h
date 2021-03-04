@@ -60,7 +60,7 @@ typedef struct
 	uint8_t (*info_opt)(const uint8_t*, uint16_t *);		//信息帧处理 固定 106字节
 	uint8_t (*data_opt)(const uint8_t*, uint16_t *);	//数据帧处理 固定 106字节
 	uint8_t (*patch_opt)(const uint8_t*, uint16_t *);	//补包处理 固定 106字节
-	uint8_t (*check_opt)(uint16_t *);								//校验包完整性
+	uint8_t (*check_opt)(uint16_t *,uint16_t *);								//校验包完整性
 	uint8_t (*reset_opt)(void);		//系统复位
 }_Iap_Func, *_pIap_Func;
 

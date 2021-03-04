@@ -23,7 +23,7 @@ void systerm_init(void)
 {
 //中断向量表初始化
 #if  EN_DEBUG
-	//SCB->VTOR = FLASH_BASE | 0X3000; /* Vector Table Relocation in Internal FLASH. */
+	SCB->VTOR = FLASH_BASE | 0X3000; /* Vector Table Relocation in Internal FLASH. */
 #else
 
 #endif
@@ -34,11 +34,10 @@ void systerm_init(void)
 
 	//读取配置参数
 	read_config_param(&mApp_Param);
-	
 	//系统板级初始化
 	bsp_init();
 	st_crc_init(); 
-	
+
 	//can协议初始化
 	can_instance_init(hcan1);
 	
@@ -70,7 +69,7 @@ void systerm_init(void)
 	systerm_init_complete();
 
 	printf("can addr = %d CC ADDR IS = %d\n", mApp_Param.can_addr, mApp_Param.cc_can_addr);
-	//main_oled_test();
+//	main_oled_test();
 }
 
 /*==================================================================================

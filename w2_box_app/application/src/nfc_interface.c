@@ -306,10 +306,10 @@ uint8_t add_new_item(void *info,  uint8_t *card_id, uint16_t len)
 
 	//拷贝标签ID
 	memcpy(pmsg->old_tag_info[f_index].uid, card_id, TAG_UID_LENS);	//拷贝标签号
-	printf("total_tag_num is %d new tag\n", pmsg ->total_tag_num);
-	printf("uid:");
+	debug_print("total_tag_num is %d new tag\n", pmsg ->total_tag_num);
+	debug_print("uid:");
 	print_hex(pmsg->old_tag_info[f_index].uid, 8);
-	printf("\n");
+	debug_print("\n");
 	pmsg->old_tag_info[f_index].tag_state = ENTRY_BLOCK_FAIL_STA;
 	pmsg->old_tag_info[f_index].is_use = 0x01;
 	

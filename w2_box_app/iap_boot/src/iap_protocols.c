@@ -2,6 +2,7 @@
 #include "board_info.h"
 #include "frame_parse.h"
 #include "crc.h" 
+#include "includes.h"
 
 _Iap_Param mIap_Param = 
 {
@@ -23,7 +24,7 @@ static uint8_t iap_frame_info_less(const uint8_t* src_buff, uint16_t *ret_result
 static uint8_t iap_frame_info(const uint8_t* src_buff, uint16_t *ret_result);
 static uint8_t iap_frame_data(const uint8_t* src_buff, uint16_t *ret_result);
 static uint8_t iap_frame_patch(const uint8_t* src_buff, uint16_t *ret_result);
-static uint8_t iap_firmware_complete_check(uint16_t *ret_result);
+static uint8_t iap_firmware_complete_check(uint16_t *ret_result,uint16_t *);
 static uint8_t iap_reset_system(void);
 
 _Iap_Func mIap_Func = 
@@ -220,7 +221,7 @@ static uint8_t iap_frame_info(const uint8_t* src_buff, uint16_t *ret_result)
 			mIap_Param.frame_step = 0;
 			
 			ret = find_firmware_lost_step(&mIap_Param, ret_result);		//校验当前接收的的包ID 
-			printf("iap_frame_info()-> ret:%04x; fw_id=%04x\r\n",ret_rev_pkg_id,*ret_result);
+			debug_print("iap_frame_info()-> ret:%04x; fw_id=%04x\r\n",ret_rev_pkg_id,*ret_result);
 			if(ret == ret_need_pkg )
 			{
 				mIap_Param.frame_step = *ret_result-1;
@@ -272,7 +273,7 @@ static uint8_t iap_frame_info(const uint8_t* src_buff, uint16_t *ret_result)
 				mIap_Param.frame_step = 0;
 				
 				ret = find_firmware_lost_step(&mIap_Param, ret_result);		//校验当前接收的的包ID 
-				printf("iap_frame_info()-> ret:%04x; fw_id=%04x\r\n",ret_rev_pkg_id,*ret_result);
+				debug_print("iap_frame_info()-> ret:%04x; fw_id=%04x\r\n",ret_rev_pkg_id,*ret_result);
 				if(ret == ret_need_pkg )
 				{ 
 					mIap_Param.frame_step = *ret_result-1;
@@ -459,17 +460,18 @@ static uint8_t iap_frame_data(const uint8_t* src_buff, uint16_t *ret_result)
 	 
 	w_addr = pmsg->DataFrame.FrameStep * FRAME_LENGTH;	//计算写入地址
 	
-	printf("iap_frame_data()-> FrameStep:%04x; frame_step=%04x\r\n",pmsg->DataFrame.FrameStep,mIap_Param.frame_step);
+	debug_print("iap_frame_data()-> FrameStep:%04x; frame_step=%04x\r\n",pmsg->DataFrame.FrameStep,mIap_Param.frame_step);
 	if((pmsg->DataFrame.FrameStep == (mIap_Param.frame_step+1))&&
 		 pmsg->DataFrame.CRC16 == crc16_ccitt(src_buff, FRAME_LENGTH-2)&&
 		 pmsg->DataFrame.SoftVer == mIap_Param.fw_msg.MsgFrame.AppVer)
 	{
-			mIap_Param.frame_step++;	//自己计算帧ID，
-			//mIap_Param.frame_step = pmsg->DataFrame.FrameStep;	//拷贝帧ID
-			return write_firware(w_addr, src_buff, FRAME_LENGTH);
+		//mIap_Param.frame_step++;	//自己计算帧ID，
+		mIap_Param.frame_step = pmsg->DataFrame.FrameStep;	//拷贝帧ID
+		return write_firware(w_addr, src_buff, FRAME_LENGTH);
 	}
 	else
 	{
+		mIap_Param.frame_step = pmsg->DataFrame.FrameStep;	//拷贝帧ID
 		return  ret_data_error; 
 	} 
 }
@@ -483,7 +485,7 @@ static uint8_t iap_frame_data(const uint8_t* src_buff, uint16_t *ret_result)
 * 作    者： xiaozh
 * 创建时间： 2021-01-06 042608
 ==================================================================================*/
-static uint8_t iap_firmware_complete_check(uint16_t *ret_result)
+static uint8_t iap_firmware_complete_check(uint16_t *ret_result,uint16_t *toal_num)
 {
 //	uint8_t ret = 0;
 	
@@ -491,7 +493,7 @@ static uint8_t iap_firmware_complete_check(uint16_t *ret_result)
 //	if(mIap_Param.update_state == iap_data_state)
 	{
 		//校验是否缺包，并返回缺少的包数据
-		return check_firmware_lost(&mIap_Param, ret_result);
+		return check_firmware_lost(&mIap_Param, ret_result,toal_num);
 	}
 //	return ret;
 }
@@ -512,7 +514,7 @@ static uint8_t iap_frame_patch(const uint8_t* src_buff, uint16_t *ret_result)
 	uint32_t w_addr = 0;
 	pBootAppFrame pmsg = (pBootAppFrame)src_buff;
 	
-	printf("d fram step=%04x, param step=%04x\r\n", pmsg->DataFrame.FrameStep, mIap_Param.frame_step+1);
+	debug_print("d fram step=%04x, param step=%04x\r\n", pmsg->DataFrame.FrameStep, mIap_Param.frame_step+1);
 	//校验当前包是否合法
 	if((pmsg->DataFrame.FrameStep == (mIap_Param.frame_step+1))&&
 	 pmsg->DataFrame.CRC16 == crc16_ccitt(src_buff, FRAME_LENGTH-2)&&
@@ -535,8 +537,7 @@ static uint8_t iap_frame_patch(const uint8_t* src_buff, uint16_t *ret_result)
 					printf("needPkg=%04x\r\n", needPkg);
 					return ret_need_pkg;
 				}
-				//返回需要的下一包数据
-				
+				//返回需要的下一包数据		
 			}
 			else
 			{

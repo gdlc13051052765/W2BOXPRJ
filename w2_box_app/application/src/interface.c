@@ -148,7 +148,7 @@ ret_msg_t config_mcan_addr(uint8_t cc_addr, uint8_t c_addr)
 	
 	if((mApp_Param.cc_can_addr == cc_addr) && (mApp_Param.can_addr == c_addr))//如果分配的地址完全相等，不再重复写入
 	{
-		printf("the cc addr is %d lc addr is %d\n", cc_addr, c_addr);
+		debug_print("the cc addr is %d lc addr is %d\n", cc_addr, c_addr);
 		ret = BOX_SUCCESS;
 	} else {
 		//修改缓存信息

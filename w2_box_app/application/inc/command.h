@@ -42,6 +42,8 @@ typedef enum
 	Android_BOX_UPDATE_LOST = 0x30,
 	Android_BOX_UPDATE_CHECK = 0x31,
 	Android_BOX_UPDATE_RESET = 0x32,
+	Android_BOX_RADIO_DATA = 0x33,
+	Android_BOX_RADIO_CHECK = 0x34,
 
 
 	//CC发起命令0x80--0xBF

@@ -219,7 +219,7 @@ uint8_t can_recv_mutil_frame(CAN_HandleTypeDef hcan, void *can_msg)
 					mMutil_Ring[new_index].is_complete = 0x01;	//接收完成
 					mMutil_Ring[new_index].ex_id.EX_ID = pmsg->ex_id.EX_ID;//将最后一帧的ID保存为长帧ID
 					//CRC校验留在协议解析，防止过多占用中断
-					printf("rev mMutil\n");
+					debug_print("rev mMutil\n");
 				}
 				else
 				{  

@@ -76,5 +76,5 @@ uint8_t find_firmware_lost_step(void *instance, uint16_t *fw_id);
 uint8_t msg_frame_check(void *instance);
 uint8_t msg_frame_compare(const uint8_t *src_buff, const uint8_t *rev_buff, uint8_t len);
 uint8_t firmware_data_check(void *instance, uint16_t *fw_id);
-uint8_t check_firmware_lost(void *instance, uint16_t *fw_id);
+uint8_t check_firmware_lost(void *instance, uint16_t *fw_id,uint16_t *toal_num);
 #endif

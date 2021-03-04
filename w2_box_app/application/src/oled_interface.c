@@ -6,8 +6,8 @@
 
 static void oled_init(void);
 static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr);
-static void oled_disp_flash_picture(_Disp_Param);
-static void oled_directry_disp(_Disp_Param pmsg);
+static uint8_t oled_disp_flash_picture(_Disp_Param);
+static uint8_t oled_directry_disp(_Disp_Param pmsg);
 	
 _Oled_Param mOled_Param = 
 {
@@ -76,8 +76,6 @@ static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 	uint8_t r_buff[MAX_DISP_LEN] = {0};
 	uint8_t try_count =3;
 	
-	//memcpy(r_buff,data,MAX_DISP_LEN);
-	//mOled_Param.w_flash->erase(nAddress,MAX_DISP_LEN);	
 	printf("write data==");
 	for(int i=0;i<MAX_DISP_LEN;i++)
 		printf("%2X ",data[i]);
@@ -86,7 +84,7 @@ static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 	if(nAddress%GT32L32_FLASH_SECTOR_SIZE == 0)
 	{
 		mOled_Param.w_flash->erase(nAddress,MAX_DISP_LEN);
-		HAL_Delay(50);//不加延时flash写失败
+		HAL_Delay(100);//不加延时flash写失败
 	}
 
 	do{
@@ -103,6 +101,10 @@ static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 						printf("read ok \r\n");
 						return 0;
 					}
+					else
+					{
+						printf("read fail \r\n");
+					}
 				}
 			}	
 	}while(try_count--);
@@ -118,9 +120,10 @@ static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 * 作    者： lc
 * 创建时间： 2021-02-22 025540
 ==================================================================================*/
-static void oled_directry_disp(_Disp_Param pmsg)
+static uint8_t oled_directry_disp(_Disp_Param pmsg)
 {
 	oleddrv_disp(pmsg);
+	return 0;
 }
 /*==================================================================================
 * 函 数 名： oled_load_picture_exflash
@@ -131,7 +134,7 @@ static void oled_directry_disp(_Disp_Param pmsg)
 * 作    者： lc
 * 创建时间： 2021-02-22 025540
 ==================================================================================*/
-static void oled_disp_flash_picture(_Disp_Param pmsg )
+static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 {
 	uint16_t bmplen=0;
   uint8_t bmpdata[1024];
@@ -148,11 +151,17 @@ static void oled_disp_flash_picture(_Disp_Param pmsg )
 				{
 					screen_show_bmp(pmsg.id ,pmsg.startCol, pmsg.startRow, pmsg.endCol, pmsg.endRow, bmpdata, 1);
 				}
+				else 
+					return 0x02;
 			}
+			else 
+					return 0x02;
 		break;
 		
 		case 03://显示字符串
 			oleddrv_disp(pmsg);
+		return 0;
 		break;
 	}
+	return 0;
 }

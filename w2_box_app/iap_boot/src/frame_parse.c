@@ -365,9 +365,9 @@ uint8_t find_firmware_lost_step(void *instance, uint16_t *fw_id)
 * 作    者： xiaozh
 * 创建时间： 2021-01-08 015246
 ==================================================================================*/
-uint8_t check_firmware_lost(void *instance, uint16_t *fw_id)
+uint8_t check_firmware_lost(void *instance, uint16_t *fw_id ,uint16_t *toal_num)
 {  
-	uint16_t fw_ids = 0;
+	volatile uint16_t fw_ids = 0;
 	uint8_t read_error = 0;	//读取存储错误
 	uint32_t fw_src_crc32 = 0;	//源码CRC32校验
 	uint8_t fw_cache[FRAME_LENGTH+1] = {0};
@@ -395,19 +395,22 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id)
 				//校验版本
 				if(pthis->fw_msg.MsgFrame.AppVer != pmsg->DataFrame.SoftVer)
 				{
+					printf("ver id = %d\r\n",cur_pkg_step);
 					*fw_id = cur_pkg_step; //不能使用读取的数据
 					return ret_need_pkg;
 				}
 				
 				//校验帧区分
 				if(pthis->fw_msg.MsgFrame.board_type != pmsg->DataFrame.FrameType)
-				{
+				{ 
+					printf("zhen id = %d\r\n",cur_pkg_step);
 					LOST_RECORD(pmsg->DataFrame.FrameStep); 
 					continue; //继续查找
 				}
 				
 				if(pmsg->DataFrame.FrameStep != cur_pkg_step)
 				{
+					printf("lost id = %d\r\n",cur_pkg_step);
 					LOST_RECORD(pmsg->DataFrame.FrameStep); 
 					continue; //继续查找
 				} 
@@ -417,6 +420,12 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id)
 			}
 			else
 			{
+				if(!fw_ids)
+				{
+					fw_ids = cur_pkg_step; 
+					*fw_id = fw_ids;
+				}			
+				printf("lost id = %d\r\n",cur_pkg_step);
 				LOST_RECORD(pmsg->DataFrame.FrameStep); 
 				continue; //继续查找
 			}
@@ -430,29 +439,31 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id)
 			}
 		}
 	}while(cur_pkg_step < (pthis->fw_msg.MsgFrame.AppTotalPackage-1));
-
+	
+	*toal_num = record_lost_param.lost_pkg_num;//丢包总数
 	if(GET_LOST_RECORD() != 0)	//丢包
 	{
 		//如果固件不完整返回不完整信息
 		if(((pthis->fw_msg.MsgFrame.AppTotalPackage/GET_LOST_RECORD())*100)> MAX_MASS_LOST_LEVEL)
 		{
+			printf("丢包率过高\n");
+			//*fw_id = fw_ids;
 			return  ret_mass_lost; //丢包率过高
 		}
 		else
 		{
 			*fw_id = fw_ids;
+			printf("包数据不完整\n");
 			return ret_rev_pkg_id;
 		}
 	}
-
 	//进行全局校验
 	if(fw_src_crc32 != pthis->fw_msg.MsgFrame.AppCrc32)	
 	{
 		//全局校验失败，写入失败原因
-		
+		printf("全局效验失败\n");
 		return ret_check_error;
-	}
-	 
+	}	 
 	return ret_ok;
 }
 

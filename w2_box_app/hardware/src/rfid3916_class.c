@@ -61,12 +61,12 @@ uint8_t read_card_block(const uint8_t* uid, uint8_t* block_buff, uint16_t* read_
 		memcpy(block_buff, block_buff1 + 1, len1 - 1);
 		memcpy(block_buff + 4, block_buff2 + 1, len2 - 1);
 		(*read_block_len) = len1 + len2 - 2;
-		printf("block:");
+		debug_print("block:");
 		print_hex(block_buff, *read_block_len);
-		printf("\n");
+		debug_print("\n");
 		err = ERR_NONE;
 	} else {
-		printf("rfalNfcvPollerReadSingleBlock() ==> error\n");
+		debug_print("rfalNfcvPollerReadSingleBlock() ==> error\n");
 		err = !ERR_NONE;
 	}
 	return err;

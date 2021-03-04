@@ -163,9 +163,9 @@ void MX_CAN_Init(uint8_t s1_addr, uint8_t s2_addr)
 
    /*===========================安卓-->餐格 过滤器fifo0 过滤=============================*/
   //广播包过滤、bit120~bit13  0xf-0x0  bit12:1   0x00FF8000 0x007F8000
-  filter_value = 0x00FF8000 >> 3;
-  filter_mask =  0x00FFFC00 >> 3;
-
+  filter_value = (0x00FF8000 >> 3);
+  filter_mask =  (0x00FFFC00 >> 3);
+	
   CAN_FilterInitStructure.FilterBank  = 0;     /* 过滤器组 */
   CAN_FilterInitStructure.FilterMode    = CAN_FILTERMODE_IDMASK;//列表模式
   CAN_FilterInitStructure.FilterScale   = CAN_FILTERSCALE_32BIT; ///* 32位 */
@@ -195,6 +195,7 @@ void MX_CAN_Init(uint8_t s1_addr, uint8_t s2_addr)
   CAN_FilterInitStructure.FilterFIFOAssignment  = CAN_FILTER_FIFO0;  ///* 能够通过该过滤器的报文存到fifo0中 */
   CAN_FilterInitStructure.FilterActivation = ENABLE;
   HAL_CAN_ConfigFilter(&hcan1,&CAN_FilterInitStructure);
+	
 
   //安卓-->餐格数据包过滤   0x00FF8000 0x007F8000
   filter_value = get_filter_by_s1(0x00FF8000 >> 3, s1_addr);
@@ -218,7 +219,8 @@ void MX_CAN_Init(uint8_t s1_addr, uint8_t s2_addr)
   filter_value = get_filter_by_s1(0x00F00000 >> 3, s1_addr);
   filter_value = get_filter_by_s2(filter_value, s2_addr);
   filter_mask = 0x00FF0000 >> 3;//GET_FILTER_BY_S1(0x00FF8000, 0xF);
-     
+	filter_mask = 0x00F00000 >> 3;//GET_FILTER_BY_S1(0x00FF8000, 0xF);
+	 
   CAN_FilterInitStructure.FilterBank  = 3;     /* 过滤器组 */
   CAN_FilterInitStructure.FilterMode    = CAN_FILTERMODE_IDMASK;//CAN_FilterMode_IdList;//CAN_FilterMode_IdMask;  /* 屏敝模式 */
   CAN_FilterInitStructure.FilterScale   = CAN_FILTERSCALE_32BIT; ///* 32位 */
@@ -266,7 +268,25 @@ void MX_CAN_Init(uint8_t s1_addr, uint8_t s2_addr)
   CAN_FilterInitStructure.FilterFIFOAssignment  = CAN_FILTER_FIFO0;  ///* 能够通过该过滤器的报文存到fifo0中 */
   CAN_FilterInitStructure.FilterActivation = ENABLE;
   HAL_CAN_ConfigFilter(&hcan1,&CAN_FilterInitStructure);
-
+	
+	//安卓广播->box多包接收
+//  filter_value = get_filter_by_s1(0x00F00000 >> 3, s1_addr);
+//  filter_value = get_filter_by_s2(filter_value, 0x0f);
+//  filter_mask = 0x00FF0000 >> 3;//GET_FILTER_BY_S1(0x00FF8000, 0xF);
+//	
+//	 
+//  CAN_FilterInitStructure.FilterBank  = 0;     /* 过滤器组 */
+//  CAN_FilterInitStructure.FilterMode    = CAN_FILTERMODE_IDMASK;//CAN_FilterMode_IdList;//CAN_FilterMode_IdMask;  /* 屏敝模式 */
+//  CAN_FilterInitStructure.FilterScale   = CAN_FILTERSCALE_32BIT; ///* 32位 */
+//   
+//  CAN_FilterInitStructure.FilterIdHigh      = FILTER_H(filter_value);  
+//  CAN_FilterInitStructure.FilterIdLow       = FILTER_L(filter_value);
+//  CAN_FilterInitStructure.FilterMaskIdHigh  = FILTER_MASK_H(filter_mask);
+//  CAN_FilterInitStructure.FilterMaskIdLow   = FILTER_MASK_L(filter_mask);
+//    
+//  CAN_FilterInitStructure.FilterFIFOAssignment  = CAN_FILTER_FIFO0;  ///* 能够通过该过滤器的报文存到fifo0中 */
+//  CAN_FilterInitStructure.FilterActivation = ENABLE;
+//  HAL_CAN_ConfigFilter(&hcan1,&CAN_FilterInitStructure);
 
   //CAN1->IER |= CAN_IT_BOF|CAN_IT_FMP0|CAN_IT_ERR;
   __HAL_CAN_ENABLE_IT(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING); //FIFO0消息挂起中断允许.   
@@ -338,7 +358,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

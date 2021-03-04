@@ -36,8 +36,8 @@ typedef struct
 {
 	void (*init)(void);
 	uint8_t (*updataPic_opt)(const uint8_t *, uint16_t *);		//更新图像库里面的自定义图像
-	void (*dispPic_opt)(_Disp_Param);//显示图像或字符串
-	void (*directlyDisp_opt)(_Disp_Param);//直接显示安卓发过来的数据
+	uint8_t (*dispPic_opt)(_Disp_Param);//显示图像或字符串
+	uint8_t (*directlyDisp_opt)(_Disp_Param);//直接显示安卓发过来的数据
 
 }_Oled_Func, *_pOled_Func;
 
