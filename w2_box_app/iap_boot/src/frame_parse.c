@@ -376,7 +376,8 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id ,uint16_t *toal_num)
 	uint64_t read_fw_addr =0;
 	_pIap_Param pthis = instance; 
 	pBootAppFrame pmsg = (pBootAppFrame)fw_cache;
-
+	
+	record_lost_param.lost_pkg_num = 0;
 	base_addr = pthis->app_cache_addr;
 
 	//进行数据解析

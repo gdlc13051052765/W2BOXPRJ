@@ -784,6 +784,38 @@ void show_upgrade_tag(uint16_t read_num)
 	screen_refresh_all(); //刷新显示 
 }
 
+
+/*==================================================================================
+* 函 数 名： show_lost_num_tag
+* 参    数： None
+* 功能描述:  显示升级收到的包号
+* 返 回 值： None
+* 备    注： SSD1315
+* 作    者： lc
+* 创建时间： 2021-03-04 132006
+==================================================================================*/
+void show_lost_num_tag(uint16_t read_num)
+{
+	uint8_t count_step = 0; 
+	unsigned char show_str[]="lost:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
+	
+	_Font_Info mFont_Info = _FONT_INIT();
+	
+	count_step = sizeof("lost:")-1;
+	show_str[count_step++] = read_num/100+'0'; 
+	show_str[count_step++] = read_num/10%10+'0';
+	show_str[count_step++] = read_num%10+'0';
+	
+
+	//汉字显示测试
+	mFont_Info.y = 16*3;
+	mFont_Info.p_text = show_str;
+	screen_show_string(&mFont_Info);
+	mFont_Info.screen = SCREEN_RIGHT;
+	screen_show_string(&mFont_Info);
+	
+	screen_refresh_all(); //刷新显示 
+}
 /*==================================================================================
 * 函 数 名： oled_show_string
 * 参    数： None

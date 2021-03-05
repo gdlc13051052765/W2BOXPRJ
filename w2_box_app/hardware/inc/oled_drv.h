@@ -68,5 +68,6 @@ void show_read_tag(uint8_t read_num, uint8_t real_num);
 void oleddrv_disp(_Disp_Param pmsg );
 void screen_show_bmp(uint8_t screen, uint8_t x_s, uint8_t y_s, uint8_t x_e, uint8_t y_e, uint8_t *c_buff, uint8_t color);
 void show_upgrade_tag(uint16_t read_num);
+void show_lost_num_tag(uint16_t read_num);
 void oled_show_string(uint8_t num,uint8_t *data);
 #endif

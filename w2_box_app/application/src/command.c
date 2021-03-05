@@ -193,6 +193,7 @@ void can_frame_parse(void* ret_msg)
 			{
 				debug_print("Android_BOX_RADIO_DATA \r\n");
 				ret_s = pIap_Func->data_opt(pmsg->data, &ret_id);
+				show_upgrade_tag(pmsg->data[1]*256 + pmsg->data[0]);
 				printf("package_id == %d\r\n",pmsg->data[1]*256 + pmsg->data[0]);
 				break;
 			}
@@ -202,6 +203,7 @@ void can_frame_parse(void* ret_msg)
 				ret_s = pIap_Func->check_opt(&ret_id,&toal_num);
 				printf("lost_toal_num = %d\r\n",toal_num);
 				iap_check_ack(pmsg->ex_id.EX_ID, ret_s, ret_id,toal_num);
+				show_lost_num_tag(toal_num);
 				printf("lost package id ==%d\r\n",ret_id);
 				break;
 			}
@@ -394,8 +396,8 @@ static void iap_simply_ack(uint32_t can_id, uint8_t ret_reuslt, uint16_t ret_id)
 * 功能描述:  升级响应
 * 返 回 值： None
 * 备    注： 
-* 作    者： xiaozh
-* 创建时间： 2021-01-07 025540
+* 作    者： lc
+* 创建时间： 2021-03-04 025540
 ==================================================================================*/
 static void iap_check_ack(uint32_t can_id, uint8_t ret_reuslt, uint16_t ret_id, uint16_t toal_num)
 {
@@ -410,15 +412,15 @@ static void iap_check_ack(uint32_t can_id, uint8_t ret_reuslt, uint16_t ret_id, 
 	else
 	{
 		msg.data[0] = 0x08;	//异常
-		msg.data[1] = ret_reuslt;	//状态值
-		msg.byte_count = 0x02;
+//		msg.data[1] = ret_reuslt;	//状态值
+//		msg.byte_count = 0x02;
 	//	if(ret_id != 0)
 		{
-			msg.data[2] = (uint8_t)((toal_num>>0)&0x00FF);	//丢失的总包好
-			msg.data[3] = (uint8_t)((toal_num>>8)&0x00FF);
-			msg.data[4] = (uint8_t)((ret_id>>0)&0x00FF);	//丢失的最小包号
-			msg.data[5] = (uint8_t)((ret_id>>8)&0x00FF);
-			msg.byte_count = 0x06;
+			msg.data[1] = (uint8_t)((toal_num>>0)&0x00FF);	//丢失的总包好
+			msg.data[2] = (uint8_t)((toal_num>>8)&0x00FF);
+			msg.data[3] = (uint8_t)((ret_id>>0)&0x00FF);	//丢失的最小包号
+			msg.data[4] = (uint8_t)((ret_id>>8)&0x00FF);
+			msg.byte_count = 0x05;
 		}
 	} 
 	
