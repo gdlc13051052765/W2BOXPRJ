@@ -191,7 +191,9 @@ void can_frame_parse(void* ret_msg)
 			}
 			case Android_BOX_RADIO_DATA://广播数据包
 			{
-				debug_print("Android_BOX_RADIO_DATA \r\n");
+//				debug_print("Android_BOX_RADIO_DATA \r\n");
+//				if(pmsg->data[0]==0xe1||pmsg->data[0]==0xe2)
+//					return ;
 				ret_s = pIap_Func->data_opt(pmsg->data, &ret_id);
 				show_upgrade_tag(pmsg->data[1]*256 + pmsg->data[0]);
 				printf("package_id == %d\r\n",pmsg->data[1]*256 + pmsg->data[0]);
@@ -225,7 +227,7 @@ void can_frame_parse(void* ret_msg)
 	
 			case Android_BOX_UPDATE_RESET:
 			{
-				debug_print("Android_BOX_UPDATE_RESET \r\n");
+				printf("Android_BOX_UPDATE_RESET \r\n");
 				iap_simply_ack(pmsg->ex_id.EX_ID, 0, 0);	//先响应再进行复位
 				HAL_Delay(30);	//等待响应完成			
 				ret_s = pIap_Func->reset_opt();	//执行复位操作
@@ -264,7 +266,7 @@ void can_frame_parse(void* ret_msg)
 		switch(pmsg->ex_id._bit.png_cmd) {
 			case CC_BOX_HEART:
 			{
-				debug_print("CC_BOX_HEART \r\n");
+				printf("CC_BOX_HEART \r\n");
 				can_sed_heartbeat(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id);
 				break;
 			}
@@ -404,7 +406,7 @@ static void iap_check_ack(uint32_t can_id, uint8_t ret_reuslt, uint16_t ret_id, 
 	_Ret_Msg msg;
 	msg.ex_id.EX_ID = can_id;
 	
-	if(ret_reuslt == 0)
+	if(toal_num == 0)
 	{
 		msg.data[0] = 0;	//正常
 		msg.byte_count = 0x01;
@@ -412,15 +414,15 @@ static void iap_check_ack(uint32_t can_id, uint8_t ret_reuslt, uint16_t ret_id, 
 	else
 	{
 		msg.data[0] = 0x08;	//异常
-//		msg.data[1] = ret_reuslt;	//状态值
-//		msg.byte_count = 0x02;
+		msg.data[1] = 0x30;	//状态值
+		msg.byte_count = 6;
 	//	if(ret_id != 0)
 		{
-			msg.data[1] = (uint8_t)((toal_num>>0)&0x00FF);	//丢失的总包好
-			msg.data[2] = (uint8_t)((toal_num>>8)&0x00FF);
-			msg.data[3] = (uint8_t)((ret_id>>0)&0x00FF);	//丢失的最小包号
-			msg.data[4] = (uint8_t)((ret_id>>8)&0x00FF);
-			msg.byte_count = 0x05;
+			msg.data[2] = (uint8_t)((toal_num>>0)&0x00FF);	//丢失的总包好
+			msg.data[3] = (uint8_t)((toal_num>>8)&0x00FF);
+			msg.data[4] = (uint8_t)((ret_id>>0)&0x00FF);	//丢失的最小包号
+			msg.data[5] = (uint8_t)((ret_id>>8)&0x00FF);
+			msg.byte_count = 0x06;
 		}
 	} 
 	

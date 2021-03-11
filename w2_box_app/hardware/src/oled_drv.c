@@ -710,7 +710,7 @@ void show_read_tag(uint8_t read_num, uint8_t real_num)
 	uint8_t count_step = 0; 
 	unsigned char show_str[]="read:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
 	unsigned char show_str_real[]="real:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
-  unsigned char show_can_addr[]="can:00";	// 
+  unsigned char show_can_addr[]="can:0000";	// 
 	unsigned char show_ver[]="ver:00";	// 
 	
 	_Font_Info mFont_Info = _FONT_INIT();
@@ -726,6 +726,8 @@ void show_read_tag(uint8_t read_num, uint8_t real_num)
 	show_str_real[count_step++] = real_num%10+'0';
 	 
 	count_step = sizeof("can:")-1; 
+	show_can_addr[count_step++] = mApp_Param.cc_can_addr/10%10+'0';
+	show_can_addr[count_step++] = mApp_Param.cc_can_addr%10+'0';
 	show_can_addr[count_step++] = mApp_Param.can_addr/10%10+'0';
 	show_can_addr[count_step++] = mApp_Param.can_addr%10+'0';
 	

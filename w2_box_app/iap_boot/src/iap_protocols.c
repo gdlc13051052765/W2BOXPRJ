@@ -516,11 +516,11 @@ static uint8_t iap_frame_patch(const uint8_t* src_buff, uint16_t *ret_result)
 	
 	debug_print("d fram step=%04x, param step=%04x\r\n", pmsg->DataFrame.FrameStep, mIap_Param.frame_step+1);
 	//校验当前包是否合法
-	if((pmsg->DataFrame.FrameStep == (mIap_Param.frame_step+1))&&
-	 pmsg->DataFrame.CRC16 == crc16_ccitt(src_buff, FRAME_LENGTH-2)&&
-	 pmsg->DataFrame.SoftVer == mIap_Param.fw_msg.MsgFrame.AppVer)
+	//if((pmsg->DataFrame.FrameStep == (mIap_Param.frame_step+1))&&pmsg->DataFrame.CRC16 == crc16_ccitt(src_buff, FRAME_LENGTH-2)&&pmsg->DataFrame.SoftVer == mIap_Param.fw_msg.MsgFrame.AppVer)
+	if(pmsg->DataFrame.CRC16 == crc16_ccitt(src_buff, FRAME_LENGTH-2)&&pmsg->DataFrame.SoftVer == mIap_Param.fw_msg.MsgFrame.AppVer)
 	{
-			w_addr = pmsg->DataFrame.FrameStep * pmsg->DataFrame.FrameStep; 
+		//	w_addr = pmsg->DataFrame.FrameStep * pmsg->DataFrame.FrameStep; 
+		w_addr = pmsg->DataFrame.FrameStep * FRAME_LENGTH; 
 			if((ret=write_firware(w_addr, src_buff, FRAME_LENGTH)) == ret_ok) //下入方式必须用带页校验的
 			{
 				//获取下一包
