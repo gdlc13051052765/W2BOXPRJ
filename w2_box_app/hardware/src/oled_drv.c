@@ -52,6 +52,26 @@ void oled_write_byte(uint8_t screen,uint8_t value,uint8_t cmd_type)
 	OLED_DC_HIGH();   	  
 }
  
+
+ /*==================================================================================
+* 函 数 名： screen_aversion
+* 参    数： 0
+* 功能描述:  屏幕显示移位
+* 返 回 值： None
+* 备    注： 
+* 作    者： xiaozh
+* 创建时间： 2019-09-19 171313
+==================================================================================*/
+void screen_aversion(uint8_t screen,uint8_t row,uint8_t col)
+{
+	oled_write_byte(screen, 0x21, OLED_CMD);    //0x21,横向显示范围,page0~page15
+	oled_write_byte(screen, col/8,OLED_CMD); 
+	oled_write_byte(screen, 0x0f, OLED_CMD); 
+	oled_write_byte(screen, 0x22, OLED_CMD); //0x22,垂直显示范围,row0~row63
+	oled_write_byte(screen, row,  OLED_CMD); 
+	oled_write_byte(screen, 0x3f, OLED_CMD); 
+	
+}
  /*==================================================================================
 * 函 数 名： screen_refresh
 * 参    数： 0
@@ -67,15 +87,14 @@ void screen_refresh(uint8_t screen)
  	_pScreen_Info pthis = NULL;
  
 	pthis = &mScreen_Info[screen]; 
-	  
+	
 	//刷新屏幕显示
-	for(i=0;i<DISP_HEIGHT;i++)  
-	{  
-		oled_write_byte(screen, 0xb0+i, OLED_CMD);    //设置页地址（0~7）
-		oled_write_byte(screen, 0x00, OLED_CMD);      //设置显示位置—列低地址
-		oled_write_byte(screen, 0x10, OLED_CMD);      //设置显示位置—列高地址   
-		for(n=0;n<DISP_WIDTH;n++)
-		{
+	for(i=0;i<DISP_WIDTH;i++){  
+//		oled_write_byte(screen, 0xb0+i, OLED_CMD);    //设置页地址（0~7）
+//		oled_write_byte(screen, 0x00, OLED_CMD);      //设置显示位置—列低地址
+//		oled_write_byte(screen, 0x10, OLED_CMD);      //设置显示位置—列高地址  
+		
+		for(n=0;n<DISP_HEIGHT;n++){
 			oled_write_byte(screen,pthis->frame_buffer[n][i],OLED_DATA);
 		} 
 	}
@@ -99,14 +118,14 @@ void screen_clear(uint8_t screen, uint8_t color)
 	pthis = &mScreen_Info[screen]; 
 
 	//刷新屏幕显示
-	for(i=0;i<DISP_HEIGHT;i++)  
+	for(i=0;i<DISP_WIDTH;i++)  
 	{
-		for(n=0;n<DISP_WIDTH;n++)
+		for(n=0;n<DISP_HEIGHT;n++)
 		{
 			pthis->frame_buffer[n][i] = ((color == BLACK)?(0x00):(0xFF));
 		} 
 	}
-	
+	screen_aversion(screen,0,0);
 	screen_refresh(screen);		//刷新屏幕
 }
 
@@ -263,14 +282,16 @@ void screen_show_bmp(uint8_t screen, uint8_t x_s, uint8_t y_s, uint8_t x_e, uint
  	_pScreen_Info pthis = NULL;
 	pthis = &mScreen_Info[screen]; 
 	  
-	for(y=y_s; y<y_e; y++)
+	for(x=x_s; x<x_e; x++)
 	{
-		for(x=x_s; x<x_e; x++)
+		for(y=y_s; y<y_e; y++)
 		{
-			pthis->frame_buffer[x][y] = c_buff[j++];
+		//	for(x=x_s; x<x_e; x++)
+			{
+				pthis->frame_buffer[x][y] = c_buff[j++];
+			}
 		}
 	}
-	
 	screen_refresh(screen);		//刷新屏幕
 }
  
@@ -426,38 +447,71 @@ void screen_show_string(_pFont_Info pmsg)
 ==================================================================================*/
 void oled_init(uint8_t screen)
 {
-	oled_write_byte(screen,0xAE,OLED_CMD);//--turn off oled panel
-	oled_write_byte(screen,0x00,OLED_CMD);//---set low column address
-	oled_write_byte(screen,0x10,OLED_CMD);//---set high column address
-	oled_write_byte(screen,0x40,OLED_CMD);//--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
-	oled_write_byte(screen,0x81,OLED_CMD);//--set contrast control register
-	oled_write_byte(screen,0xCF,OLED_CMD); // Set SEG Output Current Brightness
-	oled_write_byte(screen,0xA1,OLED_CMD);//--Set SEG/Column Mapping     0xa0左右反置 0xa1正常
-	oled_write_byte(screen,0xC8,OLED_CMD);//Set COM/Row Scan Direction   0xc0上下反置 0xc8正常
-	oled_write_byte(screen,0xA6,OLED_CMD);//--set normal display
-	oled_write_byte(screen,0xA8,OLED_CMD);//--set multiplex ratio(1 to 64)
-	oled_write_byte(screen,0x3f,OLED_CMD);//--1/64 duty
-	oled_write_byte(screen,0xD3,OLED_CMD);//-set display offset	Shift Mapping RAM Counter (0x00~0x3F)
-	oled_write_byte(screen,0x00,OLED_CMD);//-not offset
-	oled_write_byte(screen,0xd5,OLED_CMD);//--set display clock divide ratio/oscillator frequency
-	oled_write_byte(screen,0x80,OLED_CMD);//--set divide ratio, Set Clock as 100 Frames/Sec
-	oled_write_byte(screen,0xD9,OLED_CMD);//--set pre-charge period
-	oled_write_byte(screen,0xF1,OLED_CMD);//Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
-	oled_write_byte(screen,0xDA,OLED_CMD);//--set com pins hardware configuration
-	oled_write_byte(screen,0x12,OLED_CMD);
-	oled_write_byte(screen,0xDB,OLED_CMD);//--set vcomh
-	oled_write_byte(screen,0x40,OLED_CMD);//Set VCOM Deselect Level
-	oled_write_byte(screen,0x20,OLED_CMD);//-Set Page Addressing Mode (0x00/0x01/0x02)
-	oled_write_byte(screen,0x02,OLED_CMD);//
-	oled_write_byte(screen,0x8D,OLED_CMD);//--set Charge Pump enable/disable
-	oled_write_byte(screen,0x14,OLED_CMD);//--set(0x10) disable
-	oled_write_byte(screen,0xA4,OLED_CMD);// Disable Entire Display On (0xa4/0xa5)
-	oled_write_byte(screen,0xA6,OLED_CMD);// Disable Inverse Display On (0xa6/a7) 
-	oled_write_byte(screen,0xAF,OLED_CMD);//--turn on oled panel
+//	oled_write_byte(screen,0xAE,OLED_CMD);//--turn off oled panel
+//	oled_write_byte(screen,0x00,OLED_CMD);//---set low column address
+//	oled_write_byte(screen,0x10,OLED_CMD);//---set high column address
+//	oled_write_byte(screen,0x40,OLED_CMD);//--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
+//	oled_write_byte(screen,0x81,OLED_CMD);//--set contrast control register
+//	oled_write_byte(screen,0xCF,OLED_CMD); // Set SEG Output Current Brightness
+//	oled_write_byte(screen,0xA1,OLED_CMD);//--Set SEG/Column Mapping     0xa0左右反置 0xa1正常
+//	oled_write_byte(screen,0xC8,OLED_CMD);//Set COM/Row Scan Direction   0xc0上下反置 0xc8正常
+//	oled_write_byte(screen,0xA6,OLED_CMD);//--set normal display
+//	oled_write_byte(screen,0xA8,OLED_CMD);//--set multiplex ratio(1 to 64)
+//	oled_write_byte(screen,0x3f,OLED_CMD);//--1/64 duty
+//	oled_write_byte(screen,0xD3,OLED_CMD);//-set display offset	Shift Mapping RAM Counter (0x00~0x3F)
+//	oled_write_byte(screen,0x00,OLED_CMD);//-not offset
+//	oled_write_byte(screen,0xd5,OLED_CMD);//--set display clock divide ratio/oscillator frequency
+//	oled_write_byte(screen,0x80,OLED_CMD);//--set divide ratio, Set Clock as 100 Frames/Sec
+//	oled_write_byte(screen,0xD9,OLED_CMD);//--set pre-charge period
+//	oled_write_byte(screen,0xF1,OLED_CMD);//Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
+//	oled_write_byte(screen,0xDA,OLED_CMD);//--set com pins hardware configuration
+//	oled_write_byte(screen,0x12,OLED_CMD);
+//	oled_write_byte(screen,0xDB,OLED_CMD);//--set vcomh
+//	oled_write_byte(screen,0x40,OLED_CMD);//Set VCOM Deselect Level
+//	oled_write_byte(screen,0x20,OLED_CMD);//-Set Page Addressing Mode (0x00/0x01/0x02)
+//	oled_write_byte(screen,0x02,OLED_CMD);//
+//	oled_write_byte(screen,0x8D,OLED_CMD);//--set Charge Pump enable/disable
+//	oled_write_byte(screen,0x14,OLED_CMD);//--set(0x10) disable
+//	oled_write_byte(screen,0xA4,OLED_CMD);// Disable Entire Display On (0xa4/0xa5)
+//	oled_write_byte(screen,0xA6,OLED_CMD);// Disable Inverse Display On (0xa6/a7) 
+//	oled_write_byte(screen,0xAF,OLED_CMD);//--turn on oled panel
 	
-
+	oled_write_byte(screen,0xAE,OLED_CMD);//--turn off oled panel
+	oled_write_byte(screen,0x40,OLED_CMD);//---set low column address
+	oled_write_byte(screen,0x81,OLED_CMD);//---set high column address
+	oled_write_byte(screen,0xff,OLED_CMD);//--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
+	oled_write_byte(screen,0xA1,OLED_CMD);//--set contrast control register
+	oled_write_byte(screen,0xA4,OLED_CMD); // Set SEG Output Current Brightness
+	oled_write_byte(screen,0xA6,OLED_CMD);//--Set SEG/Column Mapping     0xa0左右反置 0xa1正常
+	oled_write_byte(screen,0xA8,OLED_CMD);//Set COM/Row Scan Direction   0xc0上下反置 0xc8正常
+	oled_write_byte(screen,0x3F,OLED_CMD);//--set normal display
+	oled_write_byte(screen,0xAD,OLED_CMD);//--set multiplex ratio(1 to 64)
+	oled_write_byte(screen,0x10,OLED_CMD);//--1/64 duty
+	oled_write_byte(screen,0xC8,OLED_CMD);//-set display offset	Shift Mapping RAM Counter (0x00~0x3F)
+	oled_write_byte(screen,0xD3,OLED_CMD);//-not offset
+	oled_write_byte(screen,0x00,OLED_CMD);//--set display clock divide ratio/oscillator frequency
+	oled_write_byte(screen,0xD5,OLED_CMD);//--set divide ratio, Set Clock as 100 Frames/Sec
+	oled_write_byte(screen,0x90,OLED_CMD);//--set pre-charge period
+	oled_write_byte(screen,0xD9,OLED_CMD);//Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
+	oled_write_byte(screen,0x22,OLED_CMD);//--set com pins hardware configuration
+	oled_write_byte(screen,0x20,OLED_CMD);
+	oled_write_byte(screen,0x04,OLED_CMD);//--set vcomh
+	oled_write_byte(screen,0x21,OLED_CMD);//Set VCOM Deselect Level
+	oled_write_byte(screen,0x00,OLED_CMD);//-Set Page Addressing Mode (0x00/0x01/0x02)
+	oled_write_byte(screen,0x0F,OLED_CMD);//
+	oled_write_byte(screen,0x22,OLED_CMD);//--set Charge Pump enable/disable
+	oled_write_byte(screen,0x00,OLED_CMD);//--set(0x10) disable
+	oled_write_byte(screen,0x3F,OLED_CMD);// Disable Entire Display On (0xa4/0xa5)
+	oled_write_byte(screen,0xDA,OLED_CMD);// Disable Inverse Display On (0xa6/a7) 
+	oled_write_byte(screen,0x12,OLED_CMD);//--turn on oled panel
+	oled_write_byte(screen,0xDB,OLED_CMD);//--set Charge Pump enable/disable
+	oled_write_byte(screen,0x30,OLED_CMD);//--set(0x10) disable
+	oled_write_byte(screen,0x8D,OLED_CMD);// Disable Entire Display On (0xa4/0xa5)
+	oled_write_byte(screen,0x14,OLED_CMD);// Disable Inverse Display On (0xa6/a7) 
+	oled_write_byte(screen,0xAF,OLED_CMD);//--turn on oled panel
+	HAL_Delay(50);
 	//清屏
-	screen_clear(screen,BLACK); 	
+	screen_clear(screen,WHITE); 	
 	screen_clear(screen,BLACK); 	
 }
 
@@ -513,113 +567,139 @@ void oled_gt_init(void)
  
 unsigned char BMP1[] =
 {
-	0x00,0x03,0x05,0x09,0x11,0xFF,0x11,0x89,0x05,0xC3,0x00,0xE0,0x00,0xF0,0x00,0xF8,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x44,0x28,0xFF,0x11,0xAA,0x44,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x83,0x01,0x38,0x44,0x82,0x92,
-	0x92,0x74,0x01,0x83,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x7C,0x44,0xFF,0x01,0x7D,
-	0x7D,0x7D,0x01,0x7D,0x7D,0x7D,0x7D,0x01,0x7D,0x7D,0x7D,0x7D,0x7D,0x01,0xFF,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,
-	0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x3F,0x3F,0x03,0x03,
-	0xF3,0x13,0x11,0x11,0x11,0x11,0x11,0x11,0x01,0xF1,0x11,0x61,0x81,0x01,0x01,0x01,
-	0x81,0x61,0x11,0xF1,0x01,0x01,0x01,0x01,0x41,0x41,0xF1,0x01,0x01,0x01,0x01,0x01,
-	0xC1,0x21,0x11,0x11,0x11,0x11,0x21,0xC1,0x01,0x01,0x01,0x01,0x41,0x41,0xF1,0x01,
-	0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x11,0x11,0x11,0x11,0x11,0xD3,0x33,
-	0x03,0x03,0x3F,0x3F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xE0,0xE0,0x00,0x00,
-	0x7F,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x7F,0x00,0x00,0x01,0x06,0x18,0x06,
-	0x01,0x00,0x00,0x7F,0x00,0x00,0x00,0x00,0x40,0x40,0x7F,0x40,0x40,0x00,0x00,0x00,
-	0x1F,0x20,0x40,0x40,0x40,0x40,0x20,0x1F,0x00,0x00,0x00,0x00,0x40,0x40,0x7F,0x40,
-	0x40,0x00,0x00,0x00,0x00,0x60,0x00,0x00,0x00,0x00,0x40,0x30,0x0C,0x03,0x00,0x00,
-	0x00,0x00,0xE0,0xE0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x07,0x07,0x06,0x06,
-	0x06,0x06,0x04,0x04,0x04,0x84,0x44,0x44,0x44,0x84,0x04,0x04,0x84,0x44,0x44,0x44,
-	0x84,0x04,0x04,0x04,0x84,0xC4,0x04,0x04,0x04,0x04,0x84,0x44,0x44,0x44,0x84,0x04,
-	0x04,0x04,0x04,0x04,0x84,0x44,0x44,0x44,0x84,0x04,0x04,0x04,0x04,0x04,0x84,0x44,
-	0x44,0x44,0x84,0x04,0x04,0x84,0x44,0x44,0x44,0x84,0x04,0x04,0x04,0x04,0x06,0x06,
-	0x06,0x06,0x07,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x10,0x18,0x14,0x12,0x11,0x00,0x00,0x0F,0x10,0x10,0x10,
-	0x0F,0x00,0x00,0x00,0x10,0x1F,0x10,0x00,0x00,0x00,0x08,0x10,0x12,0x12,0x0D,0x00,
-	0x00,0x18,0x00,0x00,0x0D,0x12,0x12,0x12,0x0D,0x00,0x00,0x18,0x00,0x00,0x10,0x18,
-	0x14,0x12,0x11,0x00,0x00,0x10,0x18,0x14,0x12,0x11,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x80,0x80,0x80,
-	0x80,0x80,0x80,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x7F,0x03,0x0C,0x30,0x0C,0x03,0x7F,0x00,0x00,0x38,0x54,0x54,0x58,0x00,0x00,
-	0x7C,0x04,0x04,0x78,0x00,0x00,0x3C,0x40,0x40,0x7C,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xAA,0xAA,0xAA,
-	0x28,0x08,0x00,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x7F,0x03,0x0C,0x30,0x0C,0x03,0x7F,
-	0x00,0x00,0x26,0x49,0x49,0x49,0x32,0x00,0x00,0x7F,0x02,0x04,0x08,0x10,0x7F,0x00,/********************************/
+	0X00,0X00,0X00,0X00,0X00,0X00,0X61,0X30,0X02,0X02,0X04,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X82,0X70,0X02,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X40,0X00,0X01,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X40,0X01,0X01,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X01,0X03,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X01,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X80,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X30,0X00,0X00,0X80,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X78,0X00,0X00,0X80,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XF8,0X00,0X00,0X00,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFC,0X03,0XC0,0X40,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFC,0X03,0XC0,0X40,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFC,0X07,0XE0,0X40,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X7C,0X07,0XE0,0X20,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X70,0X07,0XF0,0X20,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X40,0XF0,0X03,0XF0,0X20,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X80,0X01,0XF0,0X00,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X81,0X80,0X01,0XE0,0X10,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0X83,0X00,0X00,0XE0,0X10,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0X03,0X00,0X00,0X00,0X00,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0X07,0X00,0X00,0X00,0X10,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0X06,0X00,0X00,0X00,0X10,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X02,0X06,0X00,0X00,0X00,0X10,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X02,0X0E,0X0C,0X00,0X00,0X08,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X02,0X0E,0X1E,0X00,0X00,0X08,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X1E,0X1C,0X00,0X08,0X24,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X3E,0X1E,0X00,0X08,0X20,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X3E,0X1E,0X08,0X08,0X27,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X3C,0X1F,0X18,0X08,0X2F,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X3C,0X0F,0X18,0X04,0X2F,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0F,0X18,0X0F,0X18,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X0F,0X00,0X0F,0X18,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X0F,0X80,0X06,0X18,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X0F,0X80,0X00,0X18,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X9F,0XC0,0X00,0X38,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X9F,0XF1,0XC0,0X38,0X06,0X27,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XDF,0XF9,0XE0,0X78,0X06,0X27,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XF8,0XC0,0XF8,0X06,0X27,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XF8,0X0F,0XF8,0X06,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0X9F,0XF8,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFE,0X7F,0XF8,0X06,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFE,0X7F,0XF8,0X06,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0XFF,0XF8,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0X7F,0XF0,0X02,0X33,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0XFF,0XFE,0X7F,0XF0,0X02,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0XFF,0XFE,0X7F,0XF0,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0XFB,0XFC,0X3F,0XF0,0X02,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0XFB,0XFC,0X3F,0XE0,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0XFB,0XFC,0X3F,0XE0,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0XF9,0XFC,0X3F,0XE0,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0XF9,0XFC,0X3F,0XC0,0X02,0X07,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0XF9,0XFE,0X7F,0XC0,0X02,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X01,0XFE,0X7F,0X80,0X00,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFE,0X7F,0X80,0X00,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFE,0X3F,0X00,0X00,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X7F,0X3E,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0X1C,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0X00,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X0E,0X00,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
 };
 
 
 unsigned char BMP2[] =
 {
-	0X00,0X01,0X43,0X00,0X40,0X00,
-0X00,0X00,0X00,0X00,0X00,0X40,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X40,0X00,
-0X00,0X00,0X00,0X00,0X00,0X00,0X3D,0X40,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X07,
-0X40,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X0F,0X80,0X00,0X00,0X00,0X00,0X00,0X00,
-0X00,0X3D,0XA0,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XCB,0X20,0X00,0X00,0X00,0X00,
-0X00,0X00,0X01,0X10,0X20,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X04,0X00,0X00,0X00,
-0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X08,0X00,
-0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X10,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-0X00,0X10,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X10,0X00,0X00,0X00,0X00,0X00,
-0X00,0X00,0X00,0X70,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XB0,0X00,0X00,0X00,
-0X00,0X00,0X00,0X00,0X00,0X40,0X00,0X00,0X00,0X00,0X00,0X00,0X20,0X01,0X40,0X00,
-0X00,0X00,0X00,0X00,0X01,0XA0,0X00,0X40,0X00,0X00,0X00,0X00,0X00,0X00,0X78,0X08,
-0X08,0X00,0X00,0X00,0X00,0X00,0X00,0XE2,0X18,0X08,0X00,0X00,0X00,0X00,0X00,0X02,
-0X21,0X14,0X08,0X00,0X00,0X00,0X00,0X00,0X00,0X60,0X00,0X00,0X00,0X00,0X00,0X00,
-0X00,0X00,0X00,0X00,0X08,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X40,0X08,0X00,0X00,
-0X00,0X00,0X00,0X00,0X00,0X20,0X68,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X18,
-0X00,0X00,0X00,0X00,0X00,0X00,0X04,0X10,0X70,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-0X00,0X10,0X00,0X00,0X00,0X00,0X00,0X00,0X08,0X08,0X20,0X00,0X00,0X00,0X00,0X00,
-0X00,0X18,0X04,0X04,0X00,0X00,0X00,0X00,0X00,0X00,0X20,0X30,0X04,0X00,0X00,0X00,
-0X00,0X00,0X00,0X00,0X00,0X40,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X02,0X44,0X00,
-0X00,0X00,0X00,0X00,0X00,0X00,0X09,0X44,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X09,
-0X04,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X28,0X44,0X00,0X00,0X00,0X00,0X00,0X00,
-0X00,0X1A,0X84,0X00,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X04,0X00,0X00,0X00,0X00,
-0X00,0X00,0X03,0X80,0X44,0X00,0X00,0X00,0X00,0X00,0X00,0X0B,0X00,0X44,0X00,0X00,
-0X00,0X00,0X00,0X00,0X24,0X04,0X04,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X04,
-0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X24,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-0X02,0X24,0X00,0X00,0X00,0X00,0X00,0X00,0X10,0X02,0X04,0X00,0X00,0X00,0X00,0X00,
-0X00,0X38,0X60,0X04,0X00,0X00,0X00,0X00,0X00,0X00,0X18,0X71,0X04,0X00,0X00,0X00,
-0X00,0X00,0X02,0X20,0X30,0X14,0X00,0X00,0X00,0X00,0X00,0X04,0X40,0X00,0X14,0X00,
-0X00,0X00,0X00,0X00,0X04,0XC0,0X00,0X86,0X00,0X00,0X00,0X00,0X00,0X04,0X9C,0X80,
-0X94,0X00,0X00,0X00,0X00,0X00,0X0C,0XD8,0XC8,0X16,0X00,0X00,0X00,0X00,0X00,0X0C,
-0XC8,0XC8,0X06,0X00,0X00,0X00,0X00,0X00,0X0C,0XE0,0X08,0X46,0X00,0X00,0X00,0X00,
-0X00,0X06,0XF3,0X18,0X46,0X00,0X00,0X00,0X00,0X00,0X07,0XFE,0XF8,0X06,0X00,0X00,
-0X00,0X00,0X00,0X07,0XFF,0XF8,0X46,0X00,0X00,0X00,0X00,0X00,0X07,0XFD,0XF0,0X46,
-0X00,0X00,0X00,0X00,0X00,0X07,0X79,0XF0,0X46,0X00,0X00,0X00,0X00,0X00,0X03,0XF9,
-0XE0,0X06,0X00,0X00,0X00,0X00,0X00,0X00,0X3D,0XE0,0X06,0X00,0X00,0X00,0X00,0X00,
-0X00,0X1D,0X80,0X06,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X06,0X00,0X00,0X00,
-	
+0X00,0X00,0X00,0X00,0X00,0X00,0X61,0X30,0X02,0X02,0X04,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X82,0X70,0X02,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X40,0X00,0X01,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X40,0X01,0X01,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X01,0X03,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X01,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X00,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X80,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X30,0X00,0X00,0X80,0X87,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X78,0X00,0X00,0X80,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XF8,0X00,0X00,0X00,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFC,0X03,0XC0,0X40,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFC,0X03,0XC0,0X40,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFC,0X07,0XE0,0X40,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X7C,0X07,0XE0,0X20,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X70,0X07,0XF0,0X20,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X40,0XF0,0X03,0XF0,0X20,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X80,0X01,0XF0,0X00,0X47,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X81,0X80,0X01,0XE0,0X10,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0X83,0X00,0X00,0XE0,0X10,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0X03,0X00,0X00,0X00,0X00,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0X07,0X00,0X00,0X00,0X10,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0X06,0X00,0X00,0X00,0X10,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X02,0X06,0X00,0X00,0X00,0X10,0X07,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X02,0X0E,0X0C,0X00,0X00,0X08,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X02,0X0E,0X1E,0X00,0X00,0X08,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X1E,0X1C,0X00,0X08,0X24,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X3E,0X1E,0X00,0X08,0X20,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X3E,0X1E,0X08,0X08,0X27,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X3C,0X1F,0X18,0X08,0X2F,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0E,0X3C,0X0F,0X18,0X04,0X2F,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X06,0X0F,0X18,0X0F,0X18,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X0F,0X00,0X0F,0X18,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X0F,0X80,0X06,0X18,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X0F,0X80,0X00,0X18,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X9F,0XC0,0X00,0X38,0X04,0X27,0X00,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0X9F,0XF1,0XC0,0X38,0X06,0X27,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XDF,0XF9,0XE0,0X78,0X06,0X27,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XF8,0XC0,0XF8,0X06,0X27,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XF8,0X0F,0XF8,0X06,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0X9F,0XF8,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFE,0X7F,0XF8,0X06,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFE,0X7F,0XF8,0X06,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0XFF,0XF8,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0X7F,0XF0,0X02,0X33,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0XFF,0XFE,0X7F,0XF0,0X02,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0XFF,0XFE,0X7F,0XF0,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0XFB,0XFC,0X3F,0XF0,0X02,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X03,0XFB,0XFC,0X3F,0XE0,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0XFB,0XFC,0X3F,0XE0,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0XF9,0XFC,0X3F,0XE0,0X02,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X01,0XF9,0XFC,0X3F,0XC0,0X02,0X07,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0XF9,0XFE,0X7F,0XC0,0X02,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X01,0XFE,0X7F,0X80,0X00,0X37,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFE,0X7F,0X80,0X00,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0XFE,0X3F,0X00,0X00,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X7F,0X3E,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0X1C,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0X00,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X0E,0X00,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
+0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X17,0X80,0X00,0X00,0X00,0X00,
 };
 
 /*==================================================================================
@@ -697,8 +777,12 @@ void main_oled_test()
 	
 	
 //	//图片显示测试
-//	screen_show_bmp(SCREEN_RIGHT,0,0,128,8,BMP1,1);
-	screen_show_bmp(SCREEN_LEFT,0,0,128,8,BMP2,1);
+	screen_aversion(SCREEN_RIGHT,0,0);
+	screen_show_bmp(SCREEN_RIGHT,0,0,16,64,BMP1,1);
+	
+	screen_aversion(SCREEN_LEFT,0,0);
+	screen_show_bmp(SCREEN_LEFT,0,0,64,16,BMP2,1);
+	//screen_show_bmp(SCREEN_LEFT,0,0,128,8,BMP2,1);
 	//	screen_show_bmp(0, )
 	while(1);
 }
@@ -707,52 +791,52 @@ void main_oled_test()
 extern _App_Param mApp_Param;
 void show_read_tag(uint8_t read_num, uint8_t real_num)
 { 
-	uint8_t count_step = 0; 
-	unsigned char show_str[]="read:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
-	unsigned char show_str_real[]="real:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
-  unsigned char show_can_addr[]="can:0000";	// 
-	unsigned char show_ver[]="ver:00";	// 
-	
-	_Font_Info mFont_Info = _FONT_INIT();
-	
-	count_step = sizeof("read:")-1;
-	show_str[count_step++] = read_num/100+'0'; 
-	show_str[count_step++] = read_num/10%10+'0';
-	show_str[count_step++] = read_num%10+'0';
-	
-	count_step = sizeof("real:")-1;
-	show_str_real[count_step++] = real_num/100+'0';
-	show_str_real[count_step++] = real_num/10%10+'0';
-	show_str_real[count_step++] = real_num%10+'0';
-	 
-	count_step = sizeof("can:")-1; 
-	show_can_addr[count_step++] = mApp_Param.cc_can_addr/10%10+'0';
-	show_can_addr[count_step++] = mApp_Param.cc_can_addr%10+'0';
-	show_can_addr[count_step++] = mApp_Param.can_addr/10%10+'0';
-	show_can_addr[count_step++] = mApp_Param.can_addr%10+'0';
-	
-	//汉字显示测试
-	mFont_Info.p_text = show_str;
-	screen_show_string(&mFont_Info);
+//	uint8_t count_step = 0; 
+//	unsigned char show_str[]="read:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
+//	unsigned char show_str_real[]="real:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
+//  unsigned char show_can_addr[]="can:0000";	// 
+//	unsigned char show_ver[]="ver:00";	// 
+//	
+//	_Font_Info mFont_Info = _FONT_INIT();
+//	
+//	count_step = sizeof("read:")-1;
+//	show_str[count_step++] = read_num/100+'0'; 
+//	show_str[count_step++] = read_num/10%10+'0';
+//	show_str[count_step++] = read_num%10+'0';
+//	
+//	count_step = sizeof("real:")-1;
+//	show_str_real[count_step++] = real_num/100+'0';
+//	show_str_real[count_step++] = real_num/10%10+'0';
+//	show_str_real[count_step++] = real_num%10+'0';
+//	 
+//	count_step = sizeof("can:")-1; 
+//	show_can_addr[count_step++] = mApp_Param.cc_can_addr/10%10+'0';
+//	show_can_addr[count_step++] = mApp_Param.cc_can_addr%10+'0';
+//	show_can_addr[count_step++] = mApp_Param.can_addr/10%10+'0';
+//	show_can_addr[count_step++] = mApp_Param.can_addr%10+'0';
+//	
+//	//汉字显示测试
+//	mFont_Info.p_text = show_str;
+//	screen_show_string(&mFont_Info);
 
-	mFont_Info.p_text = show_str_real;
-	mFont_Info.screen = SCREEN_RIGHT;
-	screen_show_string(&mFont_Info);
-	
-	mFont_Info.y = 16;
-	mFont_Info.p_text = show_can_addr;
-	mFont_Info.screen = SCREEN_RIGHT;
-	screen_show_string(&mFont_Info);
-	
-	count_step = sizeof("ver:")-1; 
-	show_ver[count_step++] = SOFT_VERSION/10%10+'0';
-	show_ver[count_step++] = SOFT_VERSION%10+'0';
-	mFont_Info.y = 32;
-	mFont_Info.p_text = show_ver;
-	mFont_Info.screen = SCREEN_RIGHT;
-	screen_show_string(&mFont_Info);
-	
-	screen_refresh_all(); //刷新显示 
+//	mFont_Info.p_text = show_str_real;
+//	mFont_Info.screen = SCREEN_RIGHT;
+//	screen_show_string(&mFont_Info);
+//	
+//	mFont_Info.y = 16;
+//	mFont_Info.p_text = show_can_addr;
+//	mFont_Info.screen = SCREEN_RIGHT;
+//	screen_show_string(&mFont_Info);
+//	
+//	count_step = sizeof("ver:")-1; 
+//	show_ver[count_step++] = SOFT_VERSION/10%10+'0';
+//	show_ver[count_step++] = SOFT_VERSION%10+'0';
+//	mFont_Info.y = 32;
+//	mFont_Info.p_text = show_ver;
+//	mFont_Info.screen = SCREEN_RIGHT;
+//	screen_show_string(&mFont_Info);
+//	
+//	screen_refresh_all(); //刷新显示 
 }
 /*==================================================================================
 * 函 数 名： show_upgrade_tag

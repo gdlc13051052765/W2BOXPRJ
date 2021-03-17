@@ -79,7 +79,7 @@ void systerm_init(void);
 void app_dispatch(void);
 
 
-#define 	EN_DEBUG                (1)   //0:调试          1:正常运行
+#define 	EN_DEBUG                (0)   //0:调试          1:正常运行
 #define 	EN_WWDG                 (0)   //0:关闭看门狗     1:使能看门狗
 
 #if EN_DEBUG == 0

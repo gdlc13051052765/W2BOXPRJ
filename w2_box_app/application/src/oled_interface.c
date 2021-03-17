@@ -4,7 +4,7 @@
 #include "board_info.h"
 #include "gt32l_drv.h"
 
-static void oled_init(void);
+//static void oled_init(void);
 static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr);
 static uint8_t oled_disp_flash_picture(_Disp_Param);
 static uint8_t oled_directry_disp(_Disp_Param pmsg);
@@ -17,7 +17,7 @@ _Oled_Param mOled_Param =
 
 _Oled_Func mOled_Func = 
 {
-	.init 			= oled_init,
+	//.init 			= oled_init,
 	.updataPic_opt = oled_load_picture_exflash,
 	.dispPic_opt = oled_disp_flash_picture,
 	.directlyDisp_opt = oled_directry_disp,
@@ -27,19 +27,7 @@ _Oled_Func mOled_Func =
 _pOled_Func pOled_Func = &mOled_Func;
 
 
-/*==================================================================================
-* 函 数 名： oled_init
-* 参    数： None
-* 功能描述:  oled初始化
-* 返 回 值： None
-* 备    注： 
-* 作    者： lc
-* 创建时间： 2021-02-20 025540
-==================================================================================*/
-static void oled_init(void)
-{
 
-}
 /*==================================================================================
 * 函 数 名： oled_picture_compare
 * 参    数： None
@@ -76,6 +64,7 @@ static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 	uint8_t r_buff[MAX_DISP_LEN] = {0};
 	uint8_t try_count =3;
 	
+	printf("addr==%d \r\n",*addr);
 	printf("write data==");
 	for(int i=0;i<MAX_DISP_LEN;i++)
 		printf("%2X ",data[i]);
@@ -125,6 +114,141 @@ static uint8_t oled_directry_disp(_Disp_Param pmsg)
 	oleddrv_disp(pmsg);
 	return 0;
 }
+
+static void displayByteMapRam(uint8_t startColumn,uint8_t ColumnInByte,uint8_t RowInByte,uint8_t (*SCREEN)[16],uint8_t *data,uint8_t displayLength)
+{
+	uint8_t i;
+	uint8_t headBits=0x00;
+	uint8_t tailBits=0x00;
+	uint8_t offset=startColumn%8;//起始点偏移整数点(即8的整数倍的点)距离
+	
+	if(displayLength==0)
+		return ;
+				
+	if(offset!=0)
+	{	
+		for(i=0;i<offset;i++)   //把起始列所在seg的前offset置1
+		{
+			 headBits+=(1<<(7-i));
+			 tailBits+=1<<i;					
+		}
+	
+		SCREEN[RowInByte][ColumnInByte] = ((data[0]&(~tailBits))>>offset)+(SCREEN[RowInByte][ColumnInByte]&headBits);//组合成新byte
+		for(i=1;i<displayLength;i++)
+		{
+			SCREEN[RowInByte][ColumnInByte+i] = ((data[i-1]&tailBits)<<(8-offset))+((data[i])>>offset);		
+		}
+		SCREEN[RowInByte][ColumnInByte+displayLength] = ((data[displayLength-1]&tailBits)<<(8-offset))+(SCREEN[RowInByte][ColumnInByte+displayLength]&(~headBits));
+	}
+	else
+	{
+		for(i=ColumnInByte;i<(ColumnInByte+displayLength);i++)
+		{
+			SCREEN[RowInByte][i]=data[i-ColumnInByte];
+		}				
+	}			
+}
+
+static void displayBitMapRam(uint8_t startColumn,uint8_t RowInByte,uint8_t (*SCREEN)[16],uint8_t *data,uint8_t totalCharDisplayLength)
+{
+	uint8_t i;
+	uint8_t headBits = 0x00;
+	uint8_t tailBits = 0x00;
+	uint8_t headShiftBits = 0x00;	
+	uint8_t ColumnInByte = startColumn>>3; //起始列所在的byte
+	uint8_t offset = startColumn%8;        //起始点偏移整数点(即8的整数倍的点)距离
+	uint8_t byteNum = totalCharDisplayLength/8; //整byte数
+	uint8_t bitNum = totalCharDisplayLength%8;  //余下bit数
+	
+
+	displayByteMapRam(startColumn,ColumnInByte,RowInByte,SCREEN,data,byteNum); //把整byte部分映射到ram
+	
+	if(bitNum)  //有余
+	{
+		if(offset!=0)
+		{
+			if(bitNum<=(8-offset))
+			{
+				for(i=0;i<bitNum;i++)   //把起始列所在seg的前bitNum位置1
+				{
+					 headBits+=(1<<(7-i));
+					 tailBits+=1<<i;					
+				}					
+				SCREEN[RowInByte][ColumnInByte+byteNum]=((data[byteNum]&headBits)>>offset)|SCREEN[RowInByte][ColumnInByte+byteNum];					
+			}
+			else
+			{
+				for(i=0;i<(8-offset);i++)   //把起始列所在seg的前bitNum位置1
+				{
+					 headBits+=(1<<(7-i));			
+				}	
+				SCREEN[RowInByte][ColumnInByte+byteNum]=((data[byteNum]&headBits)>>offset)|SCREEN[RowInByte][ColumnInByte+byteNum];
+			  
+				for(i=0;i<(bitNum-(8-offset));i++)  
+				{
+					 headShiftBits+=(1<<(7-i));			
+				}
+				
+        SCREEN[RowInByte][ColumnInByte+byteNum+1]=((data[byteNum]<<(8-offset))&headShiftBits)|SCREEN[RowInByte][ColumnInByte+byteNum+1];			
+			}	
+		}
+		else
+		{
+			for(i=0;i<bitNum;i++)   //把起始列所在seg的前bitNum位置1
+			{
+				 headBits+=(1<<(7-i));
+				 tailBits+=1<<i;					
+			}
+			SCREEN[RowInByte][ColumnInByte+byteNum]=(data[byteNum]&headBits)+(SCREEN[RowInByte][ColumnInByte+byteNum]&(~headBits));
+		}
+	}
+}
+static void byteReverse(uint8_t displayLength,uint8_t mode,uint8_t *data)
+{
+	uint8_t i,j;
+	uint8_t temp=0;
+  uint8_t reverse[128];
+	for(i=0;i<displayLength;i++)    //把byte的所有bit倒序
+	{
+		for(j=0;j<8;j++)
+		{
+			if(data[i]&0x01)
+				 temp |= 1<<(7-j);  
+			else  
+				 temp &= ~(1<<(7-j)); 
+			
+			data[i]>>=1;	
+		}
+		data[i]=temp;
+		reverse[i]=temp;
+	}
+  if(mode)
+	{
+		for(i=0;i<displayLength;i++)
+	  {
+	    data[i]=reverse[displayLength-1-i];
+	  }	
+	}
+}
+
+static uint8_t readFromRam(uint8_t col,uint8_t row,uint8_t (*SCREEN)[16],uint8_t *data,uint8_t displayLength)
+{	
+	uint8_t i;
+//	if((*display.pStartColumn%8)!=0)
+//		displayLength=displayLength+1;  //若不是从整点起始,会多读出一字节补齐头尾
+	
+  if((col/8+displayLength)<15)
+    displayLength=displayLength+1;
+
+	for(i=0;i<displayLength+1;i++)
+	{
+		data[i]=SCREEN[row][col/8+i];
+	}
+
+	byteReverse(displayLength+1,0,data);
+	
+	return displayLength+1;
+}
 /*==================================================================================
 * 函 数 名： oled_load_picture_exflash
 * 参    数： None
@@ -134,11 +258,17 @@ static uint8_t oled_directry_disp(_Disp_Param pmsg)
 * 作    者： lc
 * 创建时间： 2021-02-22 025540
 ==================================================================================*/
+static uint8_t SCREEN[64][16]={0};
 static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 {
-	uint16_t bmplen=0;
-  uint8_t bmpdata[1024];
-	uint32_t nAddress = pmsg.dispAddr*MAX_DISP_LEN +OLED_PIC_ADDR;	
+	//uint16_t bmplen=0;
+  uint8_t bmpdata[128],height,flashLength,i,j,displayLength;
+	uint32_t nAddress = pmsg.dispAddr + OLED_PIC_ADDR;	
+	uint32_t width;	
+	uint8_t finaldisplayLength=0;
+	uint8_t tatalDisplayByte=0;
+	uint8_t startColumn= pmsg.startCol;
+	uint8_t RowInByte=pmsg.startRow;
 	
 	switch(pmsg.cmd )
 	{
@@ -146,13 +276,34 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 		case 02://显示黑白图
 			if((pmsg.endCol>pmsg.startCol )&&(pmsg.endRow >pmsg.startRow))
 			{
-				bmplen = ((pmsg.endCol - pmsg.startCol)  * (pmsg.endRow - pmsg.startRow));
-				if(mOled_Param.r_flash->read(nAddress,bmpdata, bmplen) == 0x01)
-				{
-					screen_show_bmp(pmsg.id ,pmsg.startCol, pmsg.startRow, pmsg.endCol, pmsg.endRow, bmpdata, 1);
-				}
-				else 
+				width = pmsg.endCol - pmsg.startCol +1 ;
+				if(width>128)
 					return 0x02;
+				if(width%8==0){
+					flashLength=width/8;
+				}
+				else{
+					flashLength=width/8+1;
+				}	
+				
+				for(i=pmsg.startRow;i<=pmsg.endRow;i++)
+				{
+					RowInByte = i;
+					height= i- pmsg.startRow ;
+				
+					nAddress =flashLength*height +pmsg.dispAddr + OLED_PIC_ADDR;
+
+					//printf("dispAddr==%d",nAddress);
+					if(mOled_Param.r_flash->read(nAddress,bmpdata, flashLength) == 0x01)
+					{
+						displayBitMapRam(startColumn,RowInByte,SCREEN,bmpdata,width);//bit=byte*8							
+						finaldisplayLength=readFromRam(startColumn,RowInByte,SCREEN,bmpdata,flashLength);		
+						screen_aversion(pmsg.id,RowInByte,startColumn);												
+						for(j=0;j<finaldisplayLength;j++){
+							oled_write_byte(pmsg.id,bmpdata[j],OLED_DATA);
+						}
+					}
+				}
 			}
 			else 
 					return 0x02;

@@ -28,7 +28,7 @@ void can_frame_parse(void* ret_msg)
 	uint16_t ret_id = 0;
 	uint16_t toal_num = 0;
 	uint16_t flash_addr = 0;
-	uint8_t ret_s = 0;
+	uint8_t ret_s = 0,i;
 	
 	uint8_t buff[8] = {0};
 	uint8_t picbuff[128] = {0xff};
@@ -100,12 +100,16 @@ void can_frame_parse(void* ret_msg)
 			case Android_BOX_CONTROL_CARD_READER:
 			{
 				mApp_Param.rfid_retry_count = (pmsg->data[0] >> 4);
+				buff[0] = BOX_SUCCESS;
+				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				debug_print("Android_BOX_CONTROL_CARD_READER \r\n");
 				break;
 			}
 			case Android_BOX_CONTROL_BEEP:
 			{
 				debug_print("Android_BOX_CONTROL_BEEP \r\n");
+				buff[0] = BOX_SUCCESS;
+				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				buff[0] = beep_control(pmsg->data[0]);
 				break;
 			}
@@ -120,7 +124,7 @@ void can_frame_parse(void* ret_msg)
 				debug_print("Android_BOX_FLASH_UPDATE \r\n");
 				flash_addr =  *(__IO uint16_t*)(&(pmsg->data[0]));
 				if(!pOled_Func->updataPic_opt(&(pmsg->data[2]),&flash_addr))
-					buff[0] = led_control(pmsg->data[1], pmsg->data[0]);
+					buff[0] = BOX_SUCCESS;
 				else
 					buff[0]  = 0x02;
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
@@ -143,25 +147,32 @@ void can_frame_parse(void* ret_msg)
 			case Android_BOX_DISPLAY_FLASH:
 			{
 				debug_print("Android_BOX_DISPLAY_FLASH \r\n");
+				debug_print("pmsg->byte_count== %d\r\n",pmsg->byte_count);
+				debug_print_hex(pmsg->data, pmsg->byte_count);
+				debug_print("\r\n");
 				dispStr.id = pmsg->data[0];
-				dispStr.cmd = pmsg->data[1];
-				dispStr.startRow = pmsg->data[2];
-				dispStr.startCol = pmsg->data[3];
-				if(dispStr.cmd ==0x03)
-				{
-					dispStr.fontSize = pmsg->data[4];
-					dispStr.dispLen = pmsg->data[5];
-					memcpy(dispStr.data,pmsg->data+6,dispStr.dispLen);
+				for(i=0;i<(pmsg->byte_count/8);i++)
+				{			
+					dispStr.cmd = pmsg->data[1+i*8];
+					dispStr.startRow = pmsg->data[2+i*8];
+					dispStr.startCol = pmsg->data[3+i*8];
+					if(dispStr.cmd ==0x03)
+					{
+						dispStr.fontSize = pmsg->data[4+i*8];
+						dispStr.dispLen = pmsg->data[5+i*8];
+						memcpy(dispStr.data,pmsg->data+6,dispStr.dispLen);
+					}
+					else
+					{
+						dispStr.endRow = pmsg->data[4+i*8];
+						dispStr.endCol = pmsg->data[5+i*8];
+						pmsg->data[9+i*8] = 0;
+						dispStr.dispAddr =  *(__IO uint32_t*)(&(pmsg->data[6+i*8]));
+					}
+					buff[0]  = pOled_Func->dispPic_opt(dispStr);
 				}
-				else
-				{
-					dispStr.endRow = pmsg->data[4];
-					dispStr.endCol = pmsg->data[5];
-					pmsg->data[9] = 0;
-					dispStr.dispAddr =  *(__IO uint32_t*)(&(pmsg->data[6]));
-				}
-			
-				buff[0]  = pOled_Func->dispPic_opt(dispStr);
+					
+				
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				break;
 			}
@@ -279,7 +290,7 @@ void can_frame_parse(void* ret_msg)
 			{
 				config_mcan_addr(pmsg->data[0],pmsg->data[1]);
 				MX_CAN_Init(mApp_Param.cc_can_addr, mApp_Param.can_addr);//重新分配地址时，需要重新初始化过滤器
-				box_report_check_status();//主动上报自检状态
+		//	box_report_check_status();//主动上报自检状态
 				debug_print("CC_BOX_ASSIGNED_ADDR \r\n");
 				break;
 			}

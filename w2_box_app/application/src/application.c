@@ -69,7 +69,7 @@ void systerm_init(void)
 	systerm_init_complete();
 
 	printf("can addr = %d CC ADDR IS = %d\n", mApp_Param.can_addr, mApp_Param.cc_can_addr);
-//	main_oled_test();
+	//main_oled_test();
 }
 
 /*==================================================================================

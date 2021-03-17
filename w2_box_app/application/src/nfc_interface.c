@@ -480,7 +480,6 @@ void rfid_find_tag(void* info)
 		}
 	}
 	
-	
 	show_read_tag(actcnt,  mTag_Context.total_tag_num);
 	//show_read_tag(actcnt,  0);
 }

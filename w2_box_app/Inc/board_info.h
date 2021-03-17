@@ -6,7 +6,7 @@
 * 作    者： xiaozh
 * 创建时间： 2021-01-05 113517
 ==================================================================================*/
-#define  SOFT_VERSION					(0x07)		//软件版本 1个字节
+#define  SOFT_VERSION					(0x06)		//软件版本 1个字节
 #define  HARD_VERSION					(0x02)		//硬件版本 1个字节
 #define  MACHINE_TYPE					(0x06)		//机器种类码 2个字节
 #define  BOARD_TYPE						(0x05)		//板卡类型 1个字节
