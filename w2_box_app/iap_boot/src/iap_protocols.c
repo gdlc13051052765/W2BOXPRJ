@@ -534,7 +534,7 @@ static uint8_t iap_frame_patch(const uint8_t* src_buff, uint16_t *ret_result)
 				else
 				{
 					*ret_result = needPkg;	//需要的包ID
-					printf("needPkg=%04x\r\n", needPkg);
+					debug_print("needPkg=%04x\r\n", needPkg);
 					return ret_need_pkg;
 				}
 				//返回需要的下一包数据		

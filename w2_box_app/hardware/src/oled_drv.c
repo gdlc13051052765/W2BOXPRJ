@@ -86,18 +86,23 @@ void screen_refresh(uint8_t screen)
   uint16_t i,n;		 
  	_pScreen_Info pthis = NULL;
  
+//	oled_gt_assic_init();
+	//oled_assic_init(screen);
+	//HAL_Delay(2000);
 	pthis = &mScreen_Info[screen]; 
-	
+
 	//刷新屏幕显示
-	for(i=0;i<DISP_WIDTH;i++){  
-//		oled_write_byte(screen, 0xb0+i, OLED_CMD);    //设置页地址（0~7）
-//		oled_write_byte(screen, 0x00, OLED_CMD);      //设置显示位置—列低地址
-//		oled_write_byte(screen, 0x10, OLED_CMD);      //设置显示位置—列高地址  
+	for(i=0;i<DISP_HEIGHT;i++){  
+		oled_write_byte(screen, 0xb0+i, OLED_CMD);    //设置页地址（0~7）
+		oled_write_byte(screen, 0x00, OLED_CMD);      //设置显示位置—列低地址
+		oled_write_byte(screen, 0x10, OLED_CMD);      //设置显示位置—列高地址  
 		
-		for(n=0;n<DISP_HEIGHT;n++){
+		for(n=0;n<DISP_WIDTH;n++){
 			oled_write_byte(screen,pthis->frame_buffer[n][i],OLED_DATA);
 		} 
 	}
+	
+//	oled_gt_init();
 }
 
 /*==================================================================================
@@ -116,17 +121,17 @@ void screen_clear(uint8_t screen, uint8_t color)
  	_pScreen_Info pthis = NULL;
  
 	pthis = &mScreen_Info[screen]; 
-
+	screen_aversion(screen,0,0);
 	//刷新屏幕显示
 	for(i=0;i<DISP_WIDTH;i++)  
 	{
 		for(n=0;n<DISP_HEIGHT;n++)
 		{
 			pthis->frame_buffer[n][i] = ((color == BLACK)?(0x00):(0xFF));
+			oled_write_byte(screen,pthis->frame_buffer[n][i],OLED_DATA);
 		} 
-	}
-	screen_aversion(screen,0,0);
-	screen_refresh(screen);		//刷新屏幕
+	}	
+	//screen_refresh(screen);		//刷新屏幕
 }
 
 /*==================================================================================
@@ -447,35 +452,6 @@ void screen_show_string(_pFont_Info pmsg)
 ==================================================================================*/
 void oled_init(uint8_t screen)
 {
-//	oled_write_byte(screen,0xAE,OLED_CMD);//--turn off oled panel
-//	oled_write_byte(screen,0x00,OLED_CMD);//---set low column address
-//	oled_write_byte(screen,0x10,OLED_CMD);//---set high column address
-//	oled_write_byte(screen,0x40,OLED_CMD);//--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
-//	oled_write_byte(screen,0x81,OLED_CMD);//--set contrast control register
-//	oled_write_byte(screen,0xCF,OLED_CMD); // Set SEG Output Current Brightness
-//	oled_write_byte(screen,0xA1,OLED_CMD);//--Set SEG/Column Mapping     0xa0左右反置 0xa1正常
-//	oled_write_byte(screen,0xC8,OLED_CMD);//Set COM/Row Scan Direction   0xc0上下反置 0xc8正常
-//	oled_write_byte(screen,0xA6,OLED_CMD);//--set normal display
-//	oled_write_byte(screen,0xA8,OLED_CMD);//--set multiplex ratio(1 to 64)
-//	oled_write_byte(screen,0x3f,OLED_CMD);//--1/64 duty
-//	oled_write_byte(screen,0xD3,OLED_CMD);//-set display offset	Shift Mapping RAM Counter (0x00~0x3F)
-//	oled_write_byte(screen,0x00,OLED_CMD);//-not offset
-//	oled_write_byte(screen,0xd5,OLED_CMD);//--set display clock divide ratio/oscillator frequency
-//	oled_write_byte(screen,0x80,OLED_CMD);//--set divide ratio, Set Clock as 100 Frames/Sec
-//	oled_write_byte(screen,0xD9,OLED_CMD);//--set pre-charge period
-//	oled_write_byte(screen,0xF1,OLED_CMD);//Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
-//	oled_write_byte(screen,0xDA,OLED_CMD);//--set com pins hardware configuration
-//	oled_write_byte(screen,0x12,OLED_CMD);
-//	oled_write_byte(screen,0xDB,OLED_CMD);//--set vcomh
-//	oled_write_byte(screen,0x40,OLED_CMD);//Set VCOM Deselect Level
-//	oled_write_byte(screen,0x20,OLED_CMD);//-Set Page Addressing Mode (0x00/0x01/0x02)
-//	oled_write_byte(screen,0x02,OLED_CMD);//
-//	oled_write_byte(screen,0x8D,OLED_CMD);//--set Charge Pump enable/disable
-//	oled_write_byte(screen,0x14,OLED_CMD);//--set(0x10) disable
-//	oled_write_byte(screen,0xA4,OLED_CMD);// Disable Entire Display On (0xa4/0xa5)
-//	oled_write_byte(screen,0xA6,OLED_CMD);// Disable Inverse Display On (0xa6/a7) 
-//	oled_write_byte(screen,0xAF,OLED_CMD);//--turn on oled panel
-	
 	oled_write_byte(screen,0xAE,OLED_CMD);//--turn off oled panel
 	oled_write_byte(screen,0x40,OLED_CMD);//---set low column address
 	oled_write_byte(screen,0x81,OLED_CMD);//---set high column address
@@ -509,12 +485,54 @@ void oled_init(uint8_t screen)
 	oled_write_byte(screen,0x8D,OLED_CMD);// Disable Entire Display On (0xa4/0xa5)
 	oled_write_byte(screen,0x14,OLED_CMD);// Disable Inverse Display On (0xa6/a7) 
 	oled_write_byte(screen,0xAF,OLED_CMD);//--turn on oled panel
-	HAL_Delay(50);
-	//清屏
-	screen_clear(screen,WHITE); 	
+//	HAL_Delay(50);
+//	//清屏
+	screen_clear(screen,BLACK); 	
 	screen_clear(screen,BLACK); 	
 }
-
+/*==================================================================================
+* 函 数 名： oled_init
+* 参    数： None
+* 功能描述:  OLED屏初始化
+* 返 回 值： None
+* 备    注： SSD1315
+* 作    者：  xiaozh
+* 创建时间： 2019-09-23 132006
+==================================================================================*/
+void oled_assic_init(uint8_t screen)
+{
+	oled_write_byte(screen,0xAE,OLED_CMD);//--turn off oled panel
+	oled_write_byte(screen,0x00,OLED_CMD);//---set low column address
+	oled_write_byte(screen,0x10,OLED_CMD);//---set high column address
+	oled_write_byte(screen,0x40,OLED_CMD);//--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
+	oled_write_byte(screen,0x81,OLED_CMD);//--set contrast control register
+	oled_write_byte(screen,0xCF,OLED_CMD); // Set SEG Output Current Brightness
+	oled_write_byte(screen,0xA1,OLED_CMD);//--Set SEG/Column Mapping     0xa0左右反置 0xa1正常
+	oled_write_byte(screen,0xC8,OLED_CMD);//Set COM/Row Scan Direction   0xc0上下反置 0xc8正常
+	oled_write_byte(screen,0xA6,OLED_CMD);//--set normal display
+	oled_write_byte(screen,0xA8,OLED_CMD);//--set multiplex ratio(1 to 64)
+	oled_write_byte(screen,0x3f,OLED_CMD);//--1/64 duty
+	oled_write_byte(screen,0xD3,OLED_CMD);//-set display offset	Shift Mapping RAM Counter (0x00~0x3F)
+	oled_write_byte(screen,0x00,OLED_CMD);//-not offset
+	oled_write_byte(screen,0xd5,OLED_CMD);//--set display clock divide ratio/oscillator frequency
+	oled_write_byte(screen,0x80,OLED_CMD);//--set divide ratio, Set Clock as 100 Frames/Sec
+	oled_write_byte(screen,0xD9,OLED_CMD);//--set pre-charge period
+	oled_write_byte(screen,0xF1,OLED_CMD);//Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
+	oled_write_byte(screen,0xDA,OLED_CMD);//--set com pins hardware configuration
+	oled_write_byte(screen,0x12,OLED_CMD);
+	oled_write_byte(screen,0xDB,OLED_CMD);//--set vcomh
+	oled_write_byte(screen,0x40,OLED_CMD);//Set VCOM Deselect Level
+	oled_write_byte(screen,0x20,OLED_CMD);//-Set Page Addressing Mode (0x00/0x01/0x02)
+	oled_write_byte(screen,0x02,OLED_CMD);//
+	oled_write_byte(screen,0x8D,OLED_CMD);//--set Charge Pump enable/disable
+	oled_write_byte(screen,0x14,OLED_CMD);//--set(0x10) disable
+	oled_write_byte(screen,0xA4,OLED_CMD);// Disable Entire Display On (0xa4/0xa5)
+	oled_write_byte(screen,0xA6,OLED_CMD);// Disable Inverse Display On (0xa6/a7) 
+	oled_write_byte(screen,0xAF,OLED_CMD);//--turn on oled panel
+	//清屏
+//	screen_clear(screen,BLACK); 	
+//	screen_clear(screen,BLACK); 	
+}
 /*==================================================================================
 * 函 数 名： gt32l_init
 * 参    数： None
@@ -547,10 +565,10 @@ void oled_gt_init(void)
 	//OLED使能
 	//	ALL_RES_HIGH();
 	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_SET);
-	HAL_Delay(100);
+	HAL_Delay(10);
 	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_RESET);
 	//	ALL_RES_LOW();
-	HAL_Delay(200);
+	HAL_Delay(20);
 	//	ALL_RES_HIGH();
 	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_SET);
 	
@@ -564,6 +582,40 @@ void oled_gt_init(void)
 //	gt32l_init();
 }
 
+
+/*==================================================================================
+* 函 数 名： oled_init
+* 参    数： None
+* 功能描述:  OLED屏初始化
+* 返 回 值： None
+* 备    注： SSD1315
+* 作    者：  xiaozh
+* 创建时间： 2019-09-23 132006
+==================================================================================*/
+void oled_gt_assic_init(void)
+{
+	//GPIO初始化
+	HAL_GPIO_WritePin(GPIOB, OLED_CS2_Pin|OLED_CS1_Pin|CS_FLASH_Pin, GPIO_PIN_SET);	//失能片选
+
+	//OLED使能
+	//	ALL_RES_HIGH();
+	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_SET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_RESET);
+	//	ALL_RES_LOW();
+	HAL_Delay(20);
+	//	ALL_RES_HIGH();
+	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_SET);
+	
+	//OLED初始化
+	oled_assic_init(SCREEN_LEFT);
+	oled_assic_init(SCREEN_RIGHT);
+
+	HAL_GPIO_WritePin(GPIOB, OLED_DC_Pin|OLED_RES1_Pin|OELD_RES2_Pin|OLED_CS2_Pin 
+												|CS_FLASH_Pin|OLED_CS1_Pin, GPIO_PIN_SET);
+	//字库芯片初始化
+//	gt32l_init();
+}
  
 unsigned char BMP1[] =
 {
@@ -791,52 +843,52 @@ void main_oled_test()
 extern _App_Param mApp_Param;
 void show_read_tag(uint8_t read_num, uint8_t real_num)
 { 
-//	uint8_t count_step = 0; 
-//	unsigned char show_str[]="read:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
-//	unsigned char show_str_real[]="real:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
-//  unsigned char show_can_addr[]="can:0000";	// 
-//	unsigned char show_ver[]="ver:00";	// 
-//	
-//	_Font_Info mFont_Info = _FONT_INIT();
-//	
-//	count_step = sizeof("read:")-1;
-//	show_str[count_step++] = read_num/100+'0'; 
-//	show_str[count_step++] = read_num/10%10+'0';
-//	show_str[count_step++] = read_num%10+'0';
-//	
-//	count_step = sizeof("real:")-1;
-//	show_str_real[count_step++] = real_num/100+'0';
-//	show_str_real[count_step++] = real_num/10%10+'0';
-//	show_str_real[count_step++] = real_num%10+'0';
-//	 
-//	count_step = sizeof("can:")-1; 
-//	show_can_addr[count_step++] = mApp_Param.cc_can_addr/10%10+'0';
-//	show_can_addr[count_step++] = mApp_Param.cc_can_addr%10+'0';
-//	show_can_addr[count_step++] = mApp_Param.can_addr/10%10+'0';
-//	show_can_addr[count_step++] = mApp_Param.can_addr%10+'0';
-//	
-//	//汉字显示测试
-//	mFont_Info.p_text = show_str;
-//	screen_show_string(&mFont_Info);
+	uint8_t count_step = 0; 
+	unsigned char show_str[]="read:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
+	unsigned char show_str_real[]="real:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
+  unsigned char show_can_addr[]="can:0000";	// 
+	unsigned char show_ver[]="ver:00";	// 
+	
+	_Font_Info mFont_Info = _FONT_INIT();
+	
+	count_step = sizeof("read:")-1;
+	show_str[count_step++] = read_num/100+'0'; 
+	show_str[count_step++] = read_num/10%10+'0';
+	show_str[count_step++] = read_num%10+'0';
+	
+	count_step = sizeof("real:")-1;
+	show_str_real[count_step++] = real_num/100+'0';
+	show_str_real[count_step++] = real_num/10%10+'0';
+	show_str_real[count_step++] = real_num%10+'0';
+	 
+	count_step = sizeof("can:")-1; 
+	show_can_addr[count_step++] = mApp_Param.cc_can_addr/10%10+'0';
+	show_can_addr[count_step++] = mApp_Param.cc_can_addr%10+'0';
+	show_can_addr[count_step++] = mApp_Param.can_addr/10%10+'0';
+	show_can_addr[count_step++] = mApp_Param.can_addr%10+'0';
+	
+	//汉字显示测试
+	mFont_Info.p_text = show_str;
+	screen_show_string(&mFont_Info);
 
-//	mFont_Info.p_text = show_str_real;
-//	mFont_Info.screen = SCREEN_RIGHT;
-//	screen_show_string(&mFont_Info);
-//	
-//	mFont_Info.y = 16;
-//	mFont_Info.p_text = show_can_addr;
-//	mFont_Info.screen = SCREEN_RIGHT;
-//	screen_show_string(&mFont_Info);
-//	
-//	count_step = sizeof("ver:")-1; 
-//	show_ver[count_step++] = SOFT_VERSION/10%10+'0';
-//	show_ver[count_step++] = SOFT_VERSION%10+'0';
-//	mFont_Info.y = 32;
-//	mFont_Info.p_text = show_ver;
-//	mFont_Info.screen = SCREEN_RIGHT;
-//	screen_show_string(&mFont_Info);
-//	
-//	screen_refresh_all(); //刷新显示 
+	mFont_Info.p_text = show_str_real;
+	mFont_Info.screen = SCREEN_RIGHT;
+	screen_show_string(&mFont_Info);
+	
+	mFont_Info.y = 16;
+	mFont_Info.p_text = show_can_addr;
+	mFont_Info.screen = SCREEN_RIGHT;
+	screen_show_string(&mFont_Info);
+	
+	count_step = sizeof("ver:")-1; 
+	show_ver[count_step++] = SOFT_VERSION/10%10+'0';
+	show_ver[count_step++] = SOFT_VERSION%10+'0';
+	mFont_Info.y = 32;
+	mFont_Info.p_text = show_ver;
+	mFont_Info.screen = SCREEN_RIGHT;
+	screen_show_string(&mFont_Info);
+	
+	screen_refresh_all(); //刷新显示 
 }
 /*==================================================================================
 * 函 数 名： show_upgrade_tag
@@ -861,7 +913,7 @@ void show_upgrade_tag(uint16_t read_num)
 	
 
 	//汉字显示测试
-	mFont_Info.y = 16*3;
+	mFont_Info.y = 16*1;
 	mFont_Info.p_text = show_str;
 	screen_show_string(&mFont_Info);
 	mFont_Info.screen = SCREEN_LEFT;

@@ -95,6 +95,8 @@ void can_frame_parse(void* ret_msg)
 			case Android_BOX_CONTROL_DISPLAY:
 			{
 				debug_print("Android_BOX_CONTROL_DISPLAY \r\n");
+				buff[0] = BOX_SUCCESS;
+				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				break;
 			}
 			case Android_BOX_CONTROL_CARD_READER:
@@ -150,10 +152,17 @@ void can_frame_parse(void* ret_msg)
 				debug_print("pmsg->byte_count== %d\r\n",pmsg->byte_count);
 				debug_print_hex(pmsg->data, pmsg->byte_count);
 				debug_print("\r\n");
+				
+				//oled_gt_init();
+				
 				dispStr.id = pmsg->data[0];
+				if(pmsg->byte_count>10)
+				{
+					printf("\r\n");
+				}
 				for(i=0;i<(pmsg->byte_count/8);i++)
 				{			
-					dispStr.cmd = pmsg->data[1+i*8];
+					dispStr.cmd = pmsg->data[1];
 					dispStr.startRow = pmsg->data[2+i*8];
 					dispStr.startCol = pmsg->data[3+i*8];
 					if(dispStr.cmd ==0x03)
@@ -171,9 +180,9 @@ void can_frame_parse(void* ret_msg)
 					}
 					buff[0]  = pOled_Func->dispPic_opt(dispStr);
 				}
-					
-				
+								
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
+				//oled_gt_assic_init();
 				break;
 			}
 			case Android_BOX_CHECK:
@@ -186,9 +195,11 @@ void can_frame_parse(void* ret_msg)
 			{
 				DisableTask(TASK_RFID_READ);//关闭寻卡任务
 				DisableTask(TASK_ADC_CONV);//关闭AD任务
+				
 				printf("Android_BOX_UPDATE_INFO \r\n");
 				ret_s = pIap_Func->info_opt(pmsg->data, &ret_id);
 				iap_simply_ack(pmsg->ex_id.EX_ID, ret_s, ret_id);
+				oled_gt_assic_init();//初始化成box自主显示
 				break;
 			}
 			case Android_BOX_UPDATE_DATA:
@@ -197,7 +208,7 @@ void can_frame_parse(void* ret_msg)
 				ret_s = pIap_Func->data_opt(pmsg->data, &ret_id);
 				iap_simply_ack(pmsg->ex_id.EX_ID, ret_s, ret_id);
 				//show_upgrade_tag(pmsg->data[1]*256 + pmsg->data[0]);
-				printf("package_id == %d\r\n",pmsg->data[1]*256 + pmsg->data[0]);
+				debug_print("package_id == %d\r\n",pmsg->data[1]*256 + pmsg->data[0]);
 				break;
 			}
 			case Android_BOX_RADIO_DATA://广播数据包
@@ -207,30 +218,30 @@ void can_frame_parse(void* ret_msg)
 //					return ;
 				ret_s = pIap_Func->data_opt(pmsg->data, &ret_id);
 				show_upgrade_tag(pmsg->data[1]*256 + pmsg->data[0]);
-				printf("package_id == %d\r\n",pmsg->data[1]*256 + pmsg->data[0]);
+				debug_print("package_id == %d\r\n",pmsg->data[1]*256 + pmsg->data[0]);
 				break;
 			}
 			case Android_BOX_RADIO_CHECK://广播升级包效验
 			{
-				printf("Android_BOX_RADIO_CHECK \r\n");
+				debug_print("Android_BOX_RADIO_CHECK \r\n");
 				ret_s = pIap_Func->check_opt(&ret_id,&toal_num);
-				printf("lost_toal_num = %d\r\n",toal_num);
+				debug_print("lost_toal_num = %d\r\n",toal_num);
 				iap_check_ack(pmsg->ex_id.EX_ID, ret_s, ret_id,toal_num);
 				show_lost_num_tag(toal_num);
-				printf("lost package id ==%d\r\n",ret_id);
+				debug_print("lost package id ==%d\r\n",ret_id);
 				break;
 			}
 			case Android_BOX_UPDATE_CHECK:
 			{
-				printf("Android_BOX_UPDATE_CHECK \r\n");
+				debug_print("Android_BOX_UPDATE_CHECK \r\n");
 				ret_s = pIap_Func->check_opt(&ret_id,&toal_num);
-				printf("lost_toal_num = %d\r\n",toal_num);
+				debug_print("lost_toal_num = %d\r\n",toal_num);
 				iap_simply_ack(pmsg->ex_id.EX_ID, ret_s, ret_id);
 				break;
 			}
 			case Android_BOX_UPDATE_LOST:
 			{
-				printf("Android_BOX_UPDATE_LOST \r\n");
+				debug_print("Android_BOX_UPDATE_LOST \r\n");
 				ret_s = pIap_Func->patch_opt(pmsg->data, &ret_id);
 				iap_simply_ack(pmsg->ex_id.EX_ID, ret_s, ret_id);
 				break;
@@ -238,7 +249,7 @@ void can_frame_parse(void* ret_msg)
 	
 			case Android_BOX_UPDATE_RESET:
 			{
-				printf("Android_BOX_UPDATE_RESET \r\n");
+				debug_print("Android_BOX_UPDATE_RESET \r\n");
 				iap_simply_ack(pmsg->ex_id.EX_ID, 0, 0);	//先响应再进行复位
 				HAL_Delay(30);	//等待响应完成			
 				ret_s = pIap_Func->reset_opt();	//执行复位操作
@@ -249,7 +260,7 @@ void can_frame_parse(void* ret_msg)
 			/***安卓收到box上报的信息****/
 			case BOX_Android_UP_CARD_INFO:
 			{
-				printf("BOX_Android_UP_CARD_INFO \r\n");
+				debug_print("BOX_Android_UP_CARD_INFO \r\n");
 				can1_msg_queue_pop(pmsg->ex_id._bit.msg_id);
 				break;
 			}
@@ -277,7 +288,7 @@ void can_frame_parse(void* ret_msg)
 		switch(pmsg->ex_id._bit.png_cmd) {
 			case CC_BOX_HEART:
 			{
-				printf("CC_BOX_HEART \r\n");
+				debug_print("CC_BOX_HEART \r\n");
 				can_sed_heartbeat(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id);
 				break;
 			}
@@ -297,6 +308,7 @@ void can_frame_parse(void* ret_msg)
 			default:
 			{
 				buff[0] = BOX_UNKNOW_CMD;
+				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				debug_print("error cmd \r\n");
 				break;
 			}

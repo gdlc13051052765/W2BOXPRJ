@@ -8,6 +8,20 @@
 #define MAX_DISP_LEN 128//最大显示的数据长度
 
 
+/**
+	*宏：FLASH地址索引
+	*/
+#define ADDRESS_BASE_CUSTOM						0x000000
+#define ADDRESS_BASE_CUSTOM_NULL			0x0F0000
+
+#define ADDRESS_BASE_ASCII_12					0x000000
+#define ADDRESS_BASE_ASCII_16					0x002000
+#define ADDRESS_BASE_ASCII_24					0x006000
+#define ADDRESS_BASE_ASCII_32					0x00E000
+
+#define ADDRESS_BASE_GB_16						0x194FDE
+#define ADDRESS_BASE_GB_24						0x2743DE
+#define ADDRESS_BASE_GB_32						0x47AE10
 
 typedef struct
 {
@@ -27,6 +41,7 @@ typedef struct
 	uint8_t endRow;//终止行
 	uint8_t endCol;//终止列
 	uint8_t fontSize;//字号
+//	uint8_t *pString;//字符串
 	uint8_t dispLen;//显示字节长度
 	uint8_t data[128];//现实的字节数据或者显示的字库flash地址
 	uint32_t dispAddr;//图片显示的flash存储地址

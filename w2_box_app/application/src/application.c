@@ -49,6 +49,9 @@ void systerm_init(void)
 	
 	//³õÊ¼»¯OLED, ×Ö¿â
 	oled_gt_init();
+	//oled_gt_assic_init();
+//	screen_clear(SCREEN_LEFT,BLACK); 	
+//	screen_clear(SCREEN_RIGHT,BLACK); 	
 
 	//¶Á¿¨Æ÷³õÊ¼»¯
 	rfid_st25r3916_init();
@@ -116,23 +119,24 @@ void app_dispatch(void)
 ==================================================================================*/
 void test_loop_task(void* argv)
 {
-	static uint32_t frame_step = 0;
-	static uint8_t count_step = 0;
-	uint8_t s_count = 0;
-//  test_send();
-	uint8_t sed_buff[255] = {0};
-	for(int i=0;i<sizeof(sed_buff); i++)
-	{
-		sed_buff[i] = i;
-	}
-	
-	frame_step++;
-	sed_buff[s_count++] = frame_step>>24;
-	sed_buff[s_count++] = frame_step>>16;
-	sed_buff[s_count++] = frame_step>>8;
-	sed_buff[s_count++] = frame_step>>0;
+//	static uint32_t frame_step = 0;
+//	static uint8_t count_step = 0;
+//	uint8_t s_count = 0;
+////  test_send();
+//	uint8_t sed_buff[255] = {0};
+//	for(int i=0;i<sizeof(sed_buff); i++)
+//	{
+//		sed_buff[i] = i;
+//	}
+//	
+//	frame_step++;
+//	sed_buff[s_count++] = frame_step>>24;
+//	sed_buff[s_count++] = frame_step>>16;
+//	sed_buff[s_count++] = frame_step>>8;
+//	sed_buff[s_count++] = frame_step>>0;
 
-	//can_sed_link_pkg(0x03, 0xAE,  sed_buff,  count_step++);
+//	//can_sed_link_pkg(0x03, 0xAE,  sed_buff,  count_step++);
+
 }
 
 

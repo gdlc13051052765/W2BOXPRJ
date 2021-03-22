@@ -376,12 +376,22 @@ static void msg_queue_send(CAN_HandleTypeDef hcan, p_send_queue_t p_queue_buff)
 
 void can1_msg_queue_pop(uint32_t msg_id)
 {
+//	unsigned int num;
+//    unsigned int ts;
+//	
+//		last_ts = HAL_GetTick();//两次发送间隔&& (ts - last_ts > 3)
 
+//    num = msg_queue_num(&can1_queue);
+//		if(num>0)
+//		{
+//			
+//		}
     msg_queue_pop(&can1_queue, msg_id);
     
     //log_printf(PRINT_DEBUG"Send Q %d len: %d\r\n",p_queue_buff->count, p_queue_buff->queue[p_queue_buff->rd].len);
 }
 
+uint8_t send_num_bak = 0;
 uint8_t msg_queue_ready(p_send_queue_t p_queue_buff)
 {
     unsigned int num;
@@ -390,7 +400,12 @@ uint8_t msg_queue_ready(p_send_queue_t p_queue_buff)
     ts = HAL_GetTick();//两次发送间隔&& (ts - last_ts > 3)
 
     num = msg_queue_num(&can1_queue);
-
+		if(send_num_bak !=num)
+		{
+			send_num_bak = num;
+			return 1;
+		}
+		
     if (num > 0 && (ts - last_ts > RETRY_TIME))//间隔RETRY_TIME 没有收到安卓回复重发指令
     {
         return 1;

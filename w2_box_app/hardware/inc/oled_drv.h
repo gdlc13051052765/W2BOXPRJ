@@ -96,8 +96,8 @@
 #define X_MAX_PIXEL					128		//最大像素点个数
 #define Y_MAX_PIXEL					64		//最大像素点个数
 
-#define DISP_WIDTH        16
-#define DISP_HEIGHT       64
+#define DISP_WIDTH        128
+#define DISP_HEIGHT       8
 
 typedef  enum
 {
@@ -123,7 +123,7 @@ typedef struct
 {
 	uint8_t type;
 	uint8_t mode;
-	uint8_t frame_buffer[DISP_HEIGHT][DISP_WIDTH];
+	uint8_t frame_buffer[DISP_WIDTH][DISP_HEIGHT];
 }_Screen_Info,*_pScreen_Info;
 
 typedef struct
@@ -152,6 +152,8 @@ typedef  unsigned long  (*gt_get_func)(uint8_t , uint8_t, uint8_t, uint8_t, uint
 #define ALL_RES_LOW()				do{GPIOB->BSRR = (uint32_t)OLED_RES1_Pin << 16u; GPIOB->BSRR = (uint32_t)OELD_RES2_Pin << 16u;}while(0)
 	
 void oled_gt_init(void);
+void oled_gt_assic_init(void);
+void screen_clear(uint8_t screen, uint8_t color);
 void show_read_tag(uint8_t read_num, uint8_t real_num);
 void oleddrv_disp(_Disp_Param pmsg );
 void screen_show_bmp(uint8_t screen, uint8_t x_s, uint8_t y_s, uint8_t x_e, uint8_t y_e, uint8_t *c_buff, uint8_t color);

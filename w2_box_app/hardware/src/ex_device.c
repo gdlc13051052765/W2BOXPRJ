@@ -282,10 +282,11 @@ void debug_led_control(uint8_t state)
 static void send_door_status_msg(void)
 {
 	uint8_t send_buff[8] = {0};
-
-	send_buff[1] = get_door_state();	//门状态
-	send_buff[0] = BOX_SUCCESS;
-	can_upload_event_to_android(BOX_Android_UP_DOOR_STATUS, send_buff, 2);
+	
+	printf("door status change");
+	send_buff[0] = get_door_state();	//门状态
+//	send_buff[0] = BOX_SUCCESS;
+	can_upload_event_to_android(BOX_Android_UP_DOOR_STATUS, send_buff, 1);
 } 
 /*==================================================================================
 * 函 数 名： box_loop_door_status_task

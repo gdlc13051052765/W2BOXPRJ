@@ -23,7 +23,7 @@ TASK_COMPONENTS TaskComps[] =
 	{0, TASK_ENABLE, 10, 10, can_sed_loop_task},            	//优先级 1
 	{0, TASK_ENABLE, 100, 100, rfid_loop_read_task},          //优先级 3
 	{0, TASK_ENABLE, 1000, 1000, adc_scan_loop_task},         //优先级 4
-	{0, TASK_DISABLE, 300, 300, loop_door_status_task},       //定时查询门状态
+	{0, TASK_ENABLE, 200, 200, loop_door_status_task},       //定时查询门状态
 	{0, TASK_DISABLE, 300, 300, test_loop_task},            	//循环测试任务
 };
 
