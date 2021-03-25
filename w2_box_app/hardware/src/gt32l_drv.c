@@ -139,9 +139,14 @@ uint8_t gt32_read_status(void)
 ==================================================================================*/
 void check_chip_status(void)
 {
-	uint8_t chip_status = 0;
+	uint8_t chip_status = 0,count = 0;
 	do{
+		count++;
 		chip_status = gt32_read_status();
+		if(count>1000){
+			printf("flash write fail \r\n");
+			break;
+		}	
 	}while(chip_status&0x01);
 }
 
@@ -239,6 +244,7 @@ uint8_t gt32_chip_read(uint32_t address, uint8_t* buff, uint32_t length)
 uint8_t gt32_chip_write(uint32_t address, const uint8_t* buff, uint32_t length)
 {
 	uint16_t pageremain;	   
+	
 	pageremain=256-address%256; 	 	    
 	if(length<=pageremain)pageremain=length;
 	while(1)

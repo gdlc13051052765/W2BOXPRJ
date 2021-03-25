@@ -8,7 +8,7 @@
 
 
 #define FRAME_MAX_LENS						106	//一帧数据最大长度
-#define   TO_IAP_FLAG		 	 				0x12345678 
+#define TO_IAP_FLAG		 	 				0x12345678 
  
   
 typedef enum

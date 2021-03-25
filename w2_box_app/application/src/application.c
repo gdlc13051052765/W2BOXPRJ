@@ -50,8 +50,9 @@ void systerm_init(void)
 	//初始化OLED, 字库
 	oled_gt_init();
 	//oled_gt_assic_init();
-//	screen_clear(SCREEN_LEFT,BLACK); 	
-//	screen_clear(SCREEN_RIGHT,BLACK); 	
+
+	//关门
+	door_close();
 
 	//读卡器初始化
 	rfid_st25r3916_init();

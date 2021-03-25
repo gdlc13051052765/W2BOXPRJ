@@ -48,10 +48,23 @@ uint8_t Length_ASCII_32[94]={
 	0x0A, 0x0C, 0x05, 0x0C, 0x0D};
 #endif
 
+static uint8_t ALFF[128] = {
+0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+};	
 //static void oled_init(void);
 static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr);
 static uint8_t oled_disp_flash_picture(_Disp_Param);
 static uint8_t oled_directry_disp(_Disp_Param pmsg);
+static uint8_t oled_toal_picNumber(uint16_t num);
+static uint16_t oled_check_data(uint16_t *minNum);
+static uint8_t oled_repair_data(uint16_t *num,uint8_t *data,uint16_t *nextPack);
 	
 _Oled_Param mOled_Param = 
 {
@@ -65,11 +78,17 @@ _Oled_Func mOled_Func =
 	.updataPic_opt = oled_load_picture_exflash,
 	.dispPic_opt = oled_disp_flash_picture,
 	.directlyDisp_opt = oled_directry_disp,
+	.toalNumber_opt = oled_toal_picNumber,
+	.checkData_opt = oled_check_data,
+	.repairPackage_opt = oled_repair_data,
 };
 
 //oled显示部分接口函数
 _pOled_Func pOled_Func = &mOled_Func;
 
+static uint16_t lost_num[100]={0};//丢失字库包号
+static uint16_t charBank_toalNum=0;//字库总包号
+static uint8_t lost_toalNum = 0;//丢失的总包号 
 
 
 /*==================================================================================
@@ -102,6 +121,8 @@ uint8_t oled_picture_compare(const uint8_t *src_buff, const uint8_t *rev_buff, u
 * 作    者： lc
 * 创建时间： 2021-02-20 025540
 ==================================================================================*/
+static uint16_t allffNumBuf[20];
+static uint8_t allffNum = 0;
 static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 {
 	uint32_t nAddress = *addr*MAX_DISP_LEN +OLED_PIC_ADDR;	
@@ -109,26 +130,27 @@ static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 	uint8_t try_count =3;
 	
 	printf("addr==%d \r\n",*addr);
-	printf("write data==");
-	for(int i=0;i<MAX_DISP_LEN;i++)
-		printf("%2X ",data[i]);
-	printf("\r\n");
 
 	if(nAddress%GT32L32_FLASH_SECTOR_SIZE == 0)
 	{
 		mOled_Param.w_flash->erase(nAddress,MAX_DISP_LEN);
-		HAL_Delay(100);//不加延时flash写失败
+		//HAL_Delay(10);//
 	}
-
+	if(!memcmp(ALFF, data, MAX_DISP_LEN))//检查是不是全0xff
+	{
+		allffNumBuf[allffNum++] = *addr;//备份全FF的包号
+		return 0;
+	}
 	do{
 			if(mOled_Param.w_flash->write(nAddress, data, MAX_DISP_LEN) == 0x01)
 			{
 				if(mOled_Param.r_flash->read(nAddress,r_buff, MAX_DISP_LEN) == 0x01)
 				{
-					printf("read dara==");
-					for(int i=0;i<MAX_DISP_LEN;i++)
-						printf("%2X ",r_buff[i]);
-					printf("\r\n");
+//					printf("read dara==");
+//					for(int i=0;i<MAX_DISP_LEN;i++)
+//						printf("%2X ",r_buff[i]);
+//					printf("\r\n");
+				
 					if(oled_picture_compare(r_buff, data, MAX_DISP_LEN) == 0x01)
 					{
 						printf("read ok \r\n");
@@ -683,6 +705,10 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 					//printf("dispAddr==%d",nAddress);
 					if(mOled_Param.r_flash->read(nAddress,bmpdata, flashLength) == 0x01)
 					{
+//						printf("bmpdata== ");
+//						for(int j=0;j<flashLength;j++)
+//						 printf(" %2X",bmpdata[i]);
+//						printf("\r\n");
 						displayBitMapRam(startColumn,RowInByte,SCREEN,bmpdata,width);//bit=byte*8							
 						finaldisplayLength=readFromRam(startColumn,RowInByte,SCREEN,bmpdata,flashLength);		
 						screen_aversion(pmsg.id,RowInByte,startColumn);												
@@ -714,5 +740,100 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 		return 0;
 		break;
 	}
+	return 0;
+}
+
+
+/*==================================================================================
+* 函 数 名： oled_toal_picNumber
+* 参    数： None
+* 功能描述:  字库总包号
+* 返 回 值： None
+* 备    注： 
+* 作    者： lc
+* 创建时间： 2021-03-22 025540
+==================================================================================*/
+static uint8_t oled_toal_picNumber(uint16_t num)
+{
+	charBank_toalNum = num;
+	allffNum = 0;
+}
+/*==================================================================================
+* 函 数 名： oled_check_data
+* 参    数： None
+* 功能描述:  下载的字库数据效验
+* 返 回 值： None
+* 备    注： 
+* 作    者： lc
+* 创建时间： 2021-03-22 025540
+==================================================================================*/
+static uint16_t oled_check_data(uint16_t *minNum)
+{
+	uint8_t r_buff[128];
+	uint16_t toalNum = 0;
+	
+//	charBank_toalNum = 2500;
+//	allffNum =1;
+//	allffNumBuf[0] = 2492;
+	for(uint16_t i=0;i<charBank_toalNum;i++)
+	{
+		if(mOled_Param.r_flash->read(i*MAX_DISP_LEN +OLED_PIC_ADDR,r_buff, MAX_DISP_LEN) == 0x01){
+			if(!memcmp(r_buff,ALFF,MAX_DISP_LEN))
+			{
+				lost_num[toalNum++] = i;			
+				for(int j=0;j<allffNum;j++)
+				{//排除全FF数据的包不需要补包
+					if(lost_num[toalNum-1] == allffNumBuf[j])
+						toalNum--;
+				}	
+			}
+		}
+		else{
+			lost_num[toalNum++] = i;
+		}
+	}
+	minNum[0] = lost_num[0];//丢失的最小包号
+	lost_toalNum = toalNum;
+	debug_print("lost toal = %d, min num = %d \r\n",toalNum,minNum[0]);
+	return toalNum;
+}
+
+/*==================================================================================
+* 函 数 名： oled_repair_data
+* 参    数： None
+* 功能描述:  字库补包
+* 返 回 值： None
+* 备    注： 
+* 作    者： lc
+* 创建时间： 2021-03-22 025540
+==================================================================================*/
+static uint8_t repair_num =0;
+static uint8_t oled_repair_data(uint16_t *num,uint8_t *data,uint16_t *nextPack)
+{
+	uint32_t nAddress = *num*MAX_DISP_LEN +OLED_PIC_ADDR;	
+	uint8_t r_buff[MAX_DISP_LEN] = {0};
+	uint8_t try_count =3;
+	
+	debug_print("addr==%d \r\n",*num);
+
+	do{
+			if(mOled_Param.w_flash->write(nAddress, data, MAX_DISP_LEN) == 0x01)
+			{
+				if(mOled_Param.r_flash->read(nAddress,r_buff, MAX_DISP_LEN) == 0x01){
+					if(oled_picture_compare(r_buff, data, MAX_DISP_LEN) == 0x01){				
+						debug_print("read ok \r\n");
+						nextPack[0] = lost_num[++repair_num];
+						if(lost_toalNum==repair_num){return 0;}//补包完成
+						else return 0x20;	
+					}
+					else{
+						debug_print("read fail \r\n");
+						nextPack[0] = lost_num[repair_num];
+						return 0x20;
+					}
+				}
+			}	
+	}while(try_count--);
+	
 	return 0;
 }

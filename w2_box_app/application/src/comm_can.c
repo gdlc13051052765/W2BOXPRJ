@@ -2,6 +2,7 @@
 #include "crc.h"
 #include "can_def_fifo.h"
 #include <can_fifo.h>
+#include "stdbool.h"
 
 _Mutil_Ring 	 mMutil1_Ring[MAX_MUTIL_ITEM_NUM];		//多包接收 
 
@@ -144,6 +145,7 @@ static uint8_t item_is_exist(CAN_HandleTypeDef hcan, uint32_t ex_id)
 			ret_index = j;
 		} else if (SAME_ID == temp)
 		{
+			printf("mMutil_Ring[j].ex_id.EX_ID = %d,ex_id = %d ,j = %d \r\n",mMutil_Ring[j].ex_id.EX_ID , ex_id,j);
 			ret_index = 0xFE;//完全相同的帧直接返回0xFE
 		}
 	}
@@ -170,6 +172,7 @@ static uint8_t item_is_exist(CAN_HandleTypeDef hcan, uint32_t ex_id)
 	return ret_index;	//空，没有可用
 }
 
+
 uint8_t can_recv_mutil_frame(CAN_HandleTypeDef hcan, void *can_msg)
 {
 	_Mutil_Ring * 	 mMutil_Ring;		//多包接收指针
@@ -184,6 +187,12 @@ uint8_t can_recv_mutil_frame(CAN_HandleTypeDef hcan, void *can_msg)
 	}
 	else
 	{
+
+//		printf("pmsg->ex_id.EX_ID == %d \r\n",pmsg->ex_id.EX_ID);
+//		printf("pmsg->ex_id._bit.msg_id == %d \r\n",pmsg->ex_id._bit.msg_id );
+//		printf("pmsg->ex_id._bit.pkg_id == %d \r\n",pmsg->ex_id._bit.pkg_id );
+//		printf("pmsg->ex_id._bit.is_end == %d \r\n",pmsg->ex_id._bit.is_end );
+		
 		//判断当前id是否存在
 		if((new_index = item_is_exist(hcan, pmsg->ex_id.EX_ID)) == 0xFF)
 		{
@@ -201,7 +210,7 @@ uint8_t can_recv_mutil_frame(CAN_HandleTypeDef hcan, void *can_msg)
 			//debug_print_hex(pmsg->data, pmsg->byte_count);
 			return 0;
 		} else if (new_index != 0xFE) { //抛弃完全相同ID帧，如果两个帧ID完全相同，说明该帧已经被保存，没必要再次存储
-			//当时新帧的时候保存到缓存
+			//当时新帧的时候保存到缓存	
 			mMutil_Ring[new_index].in_use = 0x01;	//使用中
 			mMutil_Ring[new_index].r_len += pmsg->byte_count;
 			memcpy(mMutil_Ring[new_index].r_data + (pmsg->ex_id._bit.pkg_id - 1) * 8, pmsg -> data, pmsg -> byte_count);	
@@ -219,7 +228,8 @@ uint8_t can_recv_mutil_frame(CAN_HandleTypeDef hcan, void *can_msg)
 					mMutil_Ring[new_index].is_complete = 0x01;	//接收完成
 					mMutil_Ring[new_index].ex_id.EX_ID = pmsg->ex_id.EX_ID;//将最后一帧的ID保存为长帧ID
 					//CRC校验留在协议解析，防止过多占用中断
-					debug_print("rev mMutil\n");
+					debug_print("rev mMutil \r\n");
+					debug_print("new_index == %02X \r\n",new_index);
 				}
 				else
 				{  
@@ -227,6 +237,7 @@ uint8_t can_recv_mutil_frame(CAN_HandleTypeDef hcan, void *can_msg)
 					delete_item_node(hcan, new_index);
 				}
 			}
+			
 		}
 	}
 	 

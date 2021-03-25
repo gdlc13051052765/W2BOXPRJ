@@ -902,12 +902,13 @@ void show_read_tag(uint8_t read_num, uint8_t real_num)
 void show_upgrade_tag(uint16_t read_num)
 {
 	uint8_t count_step = 0; 
-	unsigned char show_str[]="upda:000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
+	unsigned char show_str[]="upda0000";	//每个中文字符实际由两个字节组成, 对应GBK等编码
 	
 	_Font_Info mFont_Info = _FONT_INIT();
 	
-	count_step = sizeof("read:")-1;
-	show_str[count_step++] = read_num/100+'0'; 
+	count_step = sizeof("upda")-1;
+	show_str[count_step++] = read_num/1000+'0'; 
+	show_str[count_step++] = (read_num%1000)/100+'0'; 
 	show_str[count_step++] = read_num/10%10+'0';
 	show_str[count_step++] = read_num%10+'0';
 	
@@ -939,8 +940,9 @@ void show_lost_num_tag(uint16_t read_num)
 	
 	_Font_Info mFont_Info = _FONT_INIT();
 	
-	count_step = sizeof("lost:")-1;
-	show_str[count_step++] = read_num/100+'0'; 
+	count_step = sizeof("lost")-1;
+	show_str[count_step++] = read_num/1000+'0'; 
+	show_str[count_step++] = (read_num%1000)/100+'0'; 
 	show_str[count_step++] = read_num/10%10+'0';
 	show_str[count_step++] = read_num%10+'0';
 	

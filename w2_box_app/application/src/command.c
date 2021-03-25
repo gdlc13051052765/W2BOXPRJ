@@ -152,9 +152,7 @@ void can_frame_parse(void* ret_msg)
 				debug_print("pmsg->byte_count== %d\r\n",pmsg->byte_count);
 				debug_print_hex(pmsg->data, pmsg->byte_count);
 				debug_print("\r\n");
-				
-				//oled_gt_init();
-				
+
 				dispStr.id = pmsg->data[0];
 				if(pmsg->byte_count>10)
 				{
@@ -182,7 +180,6 @@ void can_frame_parse(void* ret_msg)
 				}
 								
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
-				//oled_gt_assic_init();
 				break;
 			}
 			case Android_BOX_CHECK:
@@ -190,6 +187,7 @@ void can_frame_parse(void* ret_msg)
 				debug_print("Android_BOX_CHECK \r\n");
 				break;
 			}
+			
 			//升级指令
 			case Android_BOX_UPDATE_INFO:
 			{
@@ -211,6 +209,7 @@ void can_frame_parse(void* ret_msg)
 				debug_print("package_id == %d\r\n",pmsg->data[1]*256 + pmsg->data[0]);
 				break;
 			}
+			/*********************广播升级********************************************************************************/
 			case Android_BOX_RADIO_DATA://广播数据包
 			{
 //				debug_print("Android_BOX_RADIO_DATA \r\n");
@@ -246,7 +245,6 @@ void can_frame_parse(void* ret_msg)
 				iap_simply_ack(pmsg->ex_id.EX_ID, ret_s, ret_id);
 				break;
 			}
-	
 			case Android_BOX_UPDATE_RESET:
 			{
 				debug_print("Android_BOX_UPDATE_RESET \r\n");
@@ -255,11 +253,43 @@ void can_frame_parse(void* ret_msg)
 				ret_s = pIap_Func->reset_opt();	//执行复位操作
 				break;
 			}
+			/*****************************************************************************************************************/
 			
-			 			
+			/***********************广播字库数据 START*************************************************************************/
+			case Android_BOX_CHAR_BANK_INFO://字库信息帧
+				debug_print("Android_BOX_CHAR_BANK_INFO \r\n");
+				debug_print("char bank toal number == %d \r\n",pmsg->data[1]*256 + pmsg->data[0]);
+				oled_gt_assic_init();//初始化成box自主显示
+				pOled_Func->toalNumber_opt(pmsg->data[1]*256 + pmsg->data[0]);
+				buff[0] = BOX_SUCCESS;
+				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
+			break;
+			case Android_BOX_RADIO_CHAR_BANK_DATA://广播字库数据无需应答
+				debug_print("Android_BOX_FLASH_UPDATE \r\n");
+				flash_addr =  *(__IO uint16_t*)(&(pmsg->data[0]));
+				show_upgrade_tag(pmsg->data[1]*256 + pmsg->data[0]);//显示当前接收字库号
+				pOled_Func->updataPic_opt(&(pmsg->data[2]),&flash_addr);	
+			break;
+			case Android_BOX_CHECK_CHAR_BANK_DATA://字库数据效验
+				debug_print("Android_BOX_CHECK_CHAR_BANK_DATA \r\n");	
+				toal_num = pOled_Func->checkData_opt(&ret_id);		
+				iap_check_ack(pmsg->ex_id.EX_ID, ret_s, ret_id,toal_num);		
+				debug_print("toal_num = %d, ret_id = %d \r\n",toal_num,ret_id);
+				show_lost_num_tag(toal_num);				
+			break;
+			case Android_BOX_CHAR_BANK_DATA_LOST://字库数据补包
+				debug_print("Android_BOX_CHAR_BANK_DATA_LOST \r\n");
+				flash_addr =  *(__IO uint16_t*)(&(pmsg->data[0]));
+				show_upgrade_tag(pmsg->data[1]*256 + pmsg->data[0]);//显示当前接收字库号	
+				ret_s = pOled_Func->repairPackage_opt(&flash_addr,&(pmsg->data[2]),&ret_id);	
+				iap_simply_ack(pmsg->ex_id.EX_ID, ret_s, ret_id);
+			break;
+			/************************广播字库数据 END***********************************************************************************************/
+ 			
 			/***安卓收到box上报的信息****/
 			case BOX_Android_UP_CARD_INFO:
 			{
+				oled_gt_assic_init();//初始化成box自主显示
 				debug_print("BOX_Android_UP_CARD_INFO \r\n");
 				can1_msg_queue_pop(pmsg->ex_id._bit.msg_id);
 				break;

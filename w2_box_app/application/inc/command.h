@@ -44,7 +44,11 @@ typedef enum
 	Android_BOX_UPDATE_RESET = 0x32,
 	Android_BOX_RADIO_DATA = 0x33,
 	Android_BOX_RADIO_CHECK = 0x34,
-
+	//广播字库指令
+	Android_BOX_CHAR_BANK_INFO = 0x35, //字库信息帧
+	Android_BOX_RADIO_CHAR_BANK_DATA = 0x36,//广播字库数据
+	Android_BOX_CHECK_CHAR_BANK_DATA = 0x37,//效验字库数据
+	Android_BOX_CHAR_BANK_DATA_LOST = 0x38,//丢失字库数据补包
 
 	//CC发起命令0x80--0xBF
 	CC_Android_UP_CPU_ID							= 0x80,

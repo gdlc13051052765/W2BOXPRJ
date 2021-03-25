@@ -44,6 +44,8 @@ typedef struct
 //	uint8_t *pString;//字符串
 	uint8_t dispLen;//显示字节长度
 	uint8_t data[128];//现实的字节数据或者显示的字库flash地址
+//	uint16_t toalNum;//字库总包号
+//	uint16_t lostPack[100];//丢失包号
 	uint32_t dispAddr;//图片显示的flash存储地址
 }_Disp_Param, *_disp_Param;
 
@@ -53,6 +55,9 @@ typedef struct
 	uint8_t (*updataPic_opt)(const uint8_t *, uint16_t *);		//更新图像库里面的自定义图像
 	uint8_t (*dispPic_opt)(_Disp_Param);//显示图像或字符串
 	uint8_t (*directlyDisp_opt)(_Disp_Param);//直接显示安卓发过来的数据
+	uint8_t (*toalNumber_opt)(uint16_t);//总的字库包号
+	uint16_t (*checkData_opt)(uint16_t *);//字库数据效验
+	uint8_t (*repairPackage_opt)(uint16_t *num,uint8_t *data,uint16_t *);//补包
 
 }_Oled_Func, *_pOled_Func;
 
