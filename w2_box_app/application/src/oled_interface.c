@@ -687,6 +687,7 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 		case 02://显示黑白图
 			if((pmsg.endCol>pmsg.startCol )&&(pmsg.endRow >pmsg.startRow))
 			{
+				printf("显示start\r\n");
 				width = pmsg.endCol - pmsg.startCol +1 ;
 				if(width>128)
 					return 0x02;
@@ -717,6 +718,7 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 						}
 					}
 				}
+				printf("显示stop\r\n");
 			}
 			else 
 					return 0x02;

@@ -33,16 +33,16 @@ void can_frame_parse(void* ret_msg)
 	uint8_t buff[8] = {0};
 	uint8_t picbuff[128] = {0xff};
 	//判断数据合法性
-//	debug_print("can_rev,");
-//	debug_print("png_cmd:%4x, ", pmsg->ex_id._bit.png_cmd);
-//	debug_print("s1_addr:%4x, ", pmsg->ex_id._bit.s1_addr);
-//	debug_print("s2_addr:%4x, ", pmsg->ex_id._bit.s2_addr);
-//	debug_print("is_end:%4x, ", pmsg->ex_id._bit.is_end);
-//	debug_print("msg_id:%4x, ", pmsg->ex_id._bit.msg_id);
-//	debug_print("lens=0x%02x, ", pmsg->byte_count);
-//	debug_print("rev_data:");
-//	debug_print_hex(pmsg->data, pmsg->byte_count);
-//	debug_print("\n");
+	debug_print("can_rev,");
+	debug_print("png_cmd:%4x, ", pmsg->ex_id._bit.png_cmd);
+	debug_print("s1_addr:%4x, ", pmsg->ex_id._bit.s1_addr);
+	debug_print("s2_addr:%4x, ", pmsg->ex_id._bit.s2_addr);
+	debug_print("is_end:%4x, ", pmsg->ex_id._bit.is_end);
+	debug_print("msg_id:%4x, ", pmsg->ex_id._bit.msg_id);
+	debug_print("lens=0x%02x, ", pmsg->byte_count);
+	debug_print("rev_data:");
+	debug_print_hex(pmsg->data, pmsg->byte_count);
+	debug_print("\n");
 	
 	if(pmsg->ex_id._bit.s2_addr != mApp_Param.can_addr && pmsg->ex_id._bit.s2_addr !=0x0f)
 		return;
@@ -94,14 +94,30 @@ void can_frame_parse(void* ret_msg)
 			}
 			case Android_BOX_CONTROL_DISPLAY:
 			{
+				if(pmsg->data[0]&0x01 || (!(pmsg->data[0]&0x80)) )//清屏
+				{
+					//OLED初始化
+					oled_init(SCREEN_LEFT);
+					oled_init(SCREEN_RIGHT);
+				}
 				debug_print("Android_BOX_CONTROL_DISPLAY \r\n");
 				buff[0] = BOX_SUCCESS;
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				break;
 			}
-			case Android_BOX_CONTROL_CARD_READER:
+			case Android_BOX_CONTROL_CARD_READER://寻卡控制
 			{
 				mApp_Param.rfid_retry_count = (pmsg->data[0] >> 4);
+				if(pmsg->data[1]&0x80){
+					EnableTask(TASK_RFID_READ);//打开
+					debug_print("打开寻卡\r\n");
+				}
+				else{
+					debug_print("关闭寻卡\r\n");
+					DisableTask(TASK_RFID_READ);//关闭寻卡任务
+				}
+					
+				
 				buff[0] = BOX_SUCCESS;
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				debug_print("Android_BOX_CONTROL_CARD_READER \r\n");
@@ -152,11 +168,13 @@ void can_frame_parse(void* ret_msg)
 				debug_print("pmsg->byte_count== %d\r\n",pmsg->byte_count);
 				debug_print_hex(pmsg->data, pmsg->byte_count);
 				debug_print("\r\n");
-
+				
+				buff[0] = BOX_SUCCESS;
+				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				dispStr.id = pmsg->data[0];
 				if(pmsg->byte_count>10)
 				{
-					printf("\r\n");
+					debug_print("\r\n");
 				}
 				for(i=0;i<(pmsg->byte_count/8);i++)
 				{			
@@ -179,7 +197,7 @@ void can_frame_parse(void* ret_msg)
 					buff[0]  = pOled_Func->dispPic_opt(dispStr);
 				}
 								
-				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
+			//	can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				break;
 			}
 			case Android_BOX_CHECK:
@@ -289,7 +307,7 @@ void can_frame_parse(void* ret_msg)
 			/***安卓收到box上报的信息****/
 			case BOX_Android_UP_CARD_INFO:
 			{
-				oled_gt_assic_init();//初始化成box自主显示
+//				oled_gt_assic_init();//初始化成box自主显示
 				debug_print("BOX_Android_UP_CARD_INFO \r\n");
 				can1_msg_queue_pop(pmsg->ex_id._bit.msg_id);
 				break;
@@ -318,7 +336,7 @@ void can_frame_parse(void* ret_msg)
 		switch(pmsg->ex_id._bit.png_cmd) {
 			case CC_BOX_HEART:
 			{
-				debug_print("CC_BOX_HEART \r\n");
+				printf("CC_BOX_HEART \r\n");
 				can_sed_heartbeat(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id);
 				break;
 			}
@@ -333,6 +351,9 @@ void can_frame_parse(void* ret_msg)
 				MX_CAN_Init(mApp_Param.cc_can_addr, mApp_Param.can_addr);//重新分配地址时，需要重新初始化过滤器
 		//	box_report_check_status();//主动上报自检状态
 				debug_print("CC_BOX_ASSIGNED_ADDR \r\n");
+				//关门
+				if(!READ_HALL_STATUE())
+					door_close();
 				break;
 			}
 			default:

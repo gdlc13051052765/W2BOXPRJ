@@ -230,6 +230,10 @@ uint8_t can_recv_mutil_frame(CAN_HandleTypeDef hcan, void *can_msg)
 					//CRC校验留在协议解析，防止过多占用中断
 					debug_print("rev mMutil \r\n");
 					debug_print("new_index == %02X \r\n",new_index);
+					if(new_index>8)
+					{
+						printf("mMutil error \r\n");
+					}
 				}
 				else
 				{  
@@ -292,9 +296,12 @@ uint8_t can_pop_one_frame(CAN_HandleTypeDef hcan, void *ret_msg)
 			pmsg->ex_id.EX_ID = mMutil_Ring[i].ex_id.EX_ID;
 			pmsg->byte_count = mMutil_Ring[i].r_len;
 			memcpy(pmsg->data, mMutil_Ring[i].r_data,  mMutil_Ring[i].r_len);
-			datalen = pmsg->byte_count;
+			datalen = pmsg->byte_count;		
 			//清空节点
 			delete_item_node(hcan, i);
+			debug_print("mMutil_data:");
+			debug_print_hex(pmsg->data, pmsg->byte_count);
+			debug_print("\r\n");
 			return pmsg->byte_count;
 		}
 	}
@@ -304,6 +311,10 @@ uint8_t can_pop_one_frame(CAN_HandleTypeDef hcan, void *ret_msg)
 	{
 		//查找成功
 		datalen = pmsg->byte_count;
+		
+		debug_print("mMutil_data:");
+			debug_print_hex(pmsg->data, pmsg->byte_count);
+			debug_print("\r\n");
 		return pmsg->byte_count;
 	}
 	

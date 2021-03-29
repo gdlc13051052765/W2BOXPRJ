@@ -565,10 +565,10 @@ void oled_gt_init(void)
 	//OLEDÊ¹ÄÜ
 	//	ALL_RES_HIGH();
 	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_SET);
-	HAL_Delay(10);
+	HAL_Delay(100);
 	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_RESET);
 	//	ALL_RES_LOW();
-	HAL_Delay(20);
+	HAL_Delay(200);
 	//	ALL_RES_HIGH();
 	HAL_GPIO_WritePin(GPIOB, OLED_RES1_Pin|OELD_RES2_Pin, GPIO_PIN_SET);
 	

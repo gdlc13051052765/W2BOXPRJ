@@ -49,17 +49,17 @@ void systerm_init(void)
 	
 	//初始化OLED, 字库
 	oled_gt_init();
-	//oled_gt_assic_init();
+//	oled_gt_assic_init();
 
-	//关门
-	door_close();
+//	//关门
+//	door_close();
 
 	//读卡器初始化
 	rfid_st25r3916_init();
 	rfid_context_init();
 	
 	//开启任务
-	EnableTask(TASK_RFID_READ);
+//	EnableTask(TASK_RFID_READ);
 
 	//系统初始化完成
 	mApp_Param.sys_init_complete = 0x01;
@@ -137,6 +137,7 @@ void test_loop_task(void* argv)
 //	sed_buff[s_count++] = frame_step>>0;
 
 //	//can_sed_link_pkg(0x03, 0xAE,  sed_buff,  count_step++);
+	printf("box test \r\n");
 
 }
 

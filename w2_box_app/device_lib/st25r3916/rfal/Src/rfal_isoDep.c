@@ -971,7 +971,7 @@ static ReturnCode isoDepDataExchangePCD( uint16_t *outActRxLen, bool *outIsChain
 ReturnCode rfalIsoDepDeselect( void )
 {
     ReturnCode ret;
-    uint32_t   cntRerun;
+    uint32_t   cntRerun,i;
     bool       dummyB;
     
     /*******************************************************************************/
@@ -1001,6 +1001,9 @@ ReturnCode rfalIsoDepDeselect( void )
     do{
         ret = isoDepDataExchangePCD( gIsoDep.rxLen, &dummyB );
         rfalWorker();
+			
+				if(i++>100000)
+			break;
     }
     while( ((cntRerun--) != 0U) && (ret == ERR_BUSY) );
         

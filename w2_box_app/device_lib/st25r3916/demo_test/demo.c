@@ -685,13 +685,16 @@ void demoAPDU( void )
 ReturnCode demoTransceiveBlocking( uint8_t *txBuf, uint16_t txBufSize, uint8_t **rxData, uint16_t **rcvLen, uint32_t fwt )
 {
     ReturnCode err;
-    
+    uint32_t i=0;
     err = rfalNfcDataExchangeStart( txBuf, txBufSize, rxData, rcvLen, fwt );
     if( err == ERR_NONE )
     {
         do{
             rfalNfcWorker();
             err = rfalNfcDataExchangeGetStatus();
+					
+						if(i++>100000)
+						break;
         }
         while( err == ERR_BUSY );
     }

@@ -28,8 +28,8 @@ typedef enum
 	Android_BOX_GET_DOOR_STATUS,
 	Android_BOX_CONTROL_HEAT,
 	Android_BOX_GET_HEAT,
-	Android_BOX_CONTROL_DISPLAY,
-	Android_BOX_CONTROL_CARD_READER,
+	Android_BOX_CONTROL_DISPLAY, //显示控制
+	Android_BOX_CONTROL_CARD_READER,//读卡控制
 	Android_BOX_CONTROL_BEEP,
 	Android_BOX_UPDATE,
 	Android_BOX_FLASH_UPDATE,

@@ -1362,10 +1362,12 @@ ReturnCode rfalTransceiveBlockingTx( uint8_t* txBuf, uint16_t txBufLen, uint8_t*
 static ReturnCode rfalTransceiveRunBlockingTx( void )
 {
     ReturnCode ret;
-        
+    uint32_t i=0;
     do{
         rfalWorker();
         ret = rfalGetTransceiveStatus();
+				if(i++>100000)
+			break;
     }
     while( rfalIsTransceiveInTx() && (ret == ERR_BUSY) );
     
@@ -1382,10 +1384,20 @@ static ReturnCode rfalTransceiveRunBlockingTx( void )
 ReturnCode rfalTransceiveBlockingRx( void )
 {
     ReturnCode ret;
+		uint32_t i=0;
     
     do{
         rfalWorker();
         ret = rfalGetTransceiveStatus();
+//				for( i=0;i<100;i++)
+//				{
+//					//HAL_Delay(10);
+//				}
+//				if(i>=100) break;
+			if(i++>100000)
+			break;
+			
+			
     }
     while( rfalIsTransceiveInRx() && (ret == ERR_BUSY) );    
         
@@ -3718,6 +3730,7 @@ rfalLmState rfalListenGetState( bool *dataFlag, rfalBitRate *lastBR )
 /*******************************************************************************/
 ReturnCode rfalListenSetState( rfalLmState newSt )
 {
+		uint8_t fail_num = 0;
     ReturnCode ret;
     rfalLmState newState;
     bool        reSetState;
@@ -3793,6 +3806,7 @@ ReturnCode rfalListenSetState( rfalLmState newSt )
                 if( rfalIsExtFieldOn() )
                 {
                     reSetState = true;
+										fail_num++;
                     newState   = RFAL_LM_STATE_IDLE;                         /* Set IDLE state */
                 }
             #if 1  /* Perform bit rate detection in Low power mode */
@@ -3849,6 +3863,7 @@ ReturnCode rfalListenSetState( rfalLmState newSt )
                     if( !st25r3916IsExtFieldOn() )
                     {
                         reSetState = true;
+												fail_num++;
                         newState   = RFAL_LM_STATE_POWER_OFF;                    /* Set POWER_OFF state */
                     }
                 }
@@ -3965,6 +3980,7 @@ ReturnCode rfalListenSetState( rfalLmState newSt )
             default:
                 return ERR_WRONG_STATE;
         }
+				if(fail_num>10){printf("reSetState fail \r\n");break;}
     }
     while( reSetState );
     
