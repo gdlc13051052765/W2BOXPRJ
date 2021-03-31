@@ -299,7 +299,7 @@ static void send_door_status_msg(void)
 ==================================================================================*/
 void loop_door_status_task(void* argv)
 {
-	uint8_t send_buff;
+	//uint8_t send_buff;
 
 	if(doorStateBak !=READ_HALL_STATUE())
 	{

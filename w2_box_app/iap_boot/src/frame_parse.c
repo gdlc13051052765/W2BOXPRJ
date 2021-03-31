@@ -445,13 +445,13 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id ,uint16_t *toal_num)
 	if(GET_LOST_RECORD() != 0)	//丢包
 	{
 		//如果固件不完整返回不完整信息
-		if(((pthis->fw_msg.MsgFrame.AppTotalPackage/GET_LOST_RECORD())*100)> MAX_MASS_LOST_LEVEL)
-		{
-			printf("丢包率过高\n");
-			//*fw_id = fw_ids;
-			return  ret_mass_lost; //丢包率过高
-		}
-		else
+//		if(((pthis->fw_msg.MsgFrame.AppTotalPackage/GET_LOST_RECORD())*100)> MAX_MASS_LOST_LEVEL)
+//		{
+//			printf("丢包率过高\n");
+//			//*fw_id = fw_ids;
+//			return  ret_mass_lost; //丢包率过高
+//		}
+//		else
 		{
 			*fw_id = fw_ids;
 			printf("包数据不完整\n");

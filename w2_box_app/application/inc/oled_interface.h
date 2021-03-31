@@ -62,4 +62,5 @@ typedef struct
 }_Oled_Func, *_pOled_Func;
 
 extern _pOled_Func pOled_Func;
+
 #endif

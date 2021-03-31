@@ -4,7 +4,7 @@
 #include <can_fifo.h>
 #include "stdbool.h"
 
-_Mutil_Ring 	 mMutil1_Ring[MAX_MUTIL_ITEM_NUM];		//多包接收 
+static _Mutil_Ring 	 mMutil1_Ring;		//多包接收 
 
 static uint64_t mutil1_mark_table[64] = {0};
 
@@ -31,10 +31,10 @@ static uint8_t msg_queue_ready(p_send_queue_t p_queue_buff);
 void can_instance_init(CAN_HandleTypeDef hcan)
 {  
 	_Can_Instance * mCan_Instance;
-	_Mutil_Ring * 	 mMutil_Ring;		//多包接收指针
+	_pMutil_Ring  	 mMutil_Ring;		//多包接收指针
 
 	mCan_Instance = &mCan1_Instance,
-	mMutil_Ring = mMutil1_Ring;
+	mMutil_Ring = &mMutil1_Ring;
 	mCan_Instance->p_ffunc	= pCan1_Fifo_Func,
 	//发送接收缓存初始化（单帧） 
 
@@ -45,14 +45,14 @@ void can_instance_init(CAN_HandleTypeDef hcan)
 	//长帧接收初始化
 	mCan_Instance->pMutil_Fifo = mMutil_Ring;
 	
-	for(int i=0; i<MAX_MUTIL_ITEM_NUM; i++)
+	for(int i=0; i<MAX_SINGLE_ITEM_NUM; i++)
 	{
-		mMutil_Ring[i].ex_id.EX_ID = 0;
-		mMutil_Ring[i].in_use = 0;
-		mMutil_Ring[i].is_complete = 0;
-		mMutil_Ring[i].recv_pkg_num = 0;
-		memset(mMutil_Ring[i].r_data, 0, sizeof(mMutil_Ring[i].r_data));
+		mMutil_Ring->cache_frame[i].ex_id.EX_ID = 0;
+		mMutil_Ring->cache_frame[i].in_use = 0;
+		memset(mMutil_Ring->cache_frame[i].r_data, 0, sizeof(mMutil_Ring->cache_frame[i].r_data));
 	}
+	mMutil_Ring->is_complete = 0;
+	mMutil_Ring->recv_pkg_num = 0;
 }
  
 /*==================================================================================
@@ -68,11 +68,11 @@ static uint8_t find_null_node(CAN_HandleTypeDef hcan)
 {
 	_Mutil_Ring * 	 mMutil_Ring;		//多包接收指针
 
-	mMutil_Ring = mMutil1_Ring;
+	mMutil_Ring = &mMutil1_Ring;
 	//查询可用空节点索引
-	for(int i=0; i<MAX_MUTIL_ITEM_NUM; i++)	//从后往前查找可用的ID号
+	for(int i=0; i<MAX_SINGLE_ITEM_NUM; i++)	//从后往前查找可用的ID号
 	{
-		if(mMutil_Ring[i].in_use == 0)
+		if(mMutil_Ring->cache_frame[i].in_use == 0)
 		{
 			return i;
 		}
@@ -94,14 +94,15 @@ static uint8_t delete_item_node(CAN_HandleTypeDef hcan, uint8_t index)
 {	
 	_Mutil_Ring * 	 mMutil_Ring;		//多包接收指针
   
-	mMutil_Ring = mMutil1_Ring;
+	mMutil_Ring = &mMutil1_Ring;
 	//清空缓存
-	mMutil_Ring[index].in_use = 0;	//删除不合法帧 
-	mMutil_Ring[index].is_complete = 0;
-	mMutil_Ring[index].ex_id.EX_ID = 0;
-	mMutil_Ring[index].recv_pkg_num = 0;
-	mMutil_Ring[index].r_len = 0;
-
+	mMutil_Ring->cache_frame[index].in_use = 0;	//删除不合法帧 
+//	mMutil_Ring->is_complete = 0;
+	mMutil_Ring->cache_frame[index].ex_id.EX_ID = 0;
+	//mMutil_Ring[index].recv_pkg_num = 0;
+	mMutil_Ring->cache_frame[index].r_len = 0;
+	mMutil_Ring->cache_frame[index].pkg_id = 0;
+	
 	return 0;
 }
 
@@ -133,19 +134,19 @@ static uint8_t item_is_exist(CAN_HandleTypeDef hcan, uint32_t ex_id)
 	uint8_t ret_index = 0xFF;	//返回的节点索引
 	_pEx_id pmsg = (_pEx_id)&ex_id; 
 
-	mMutil_Ring = mMutil1_Ring;
+	mMutil_Ring = &mMutil1_Ring;
 	
 	//查询当前地址是否已经有缓存帧
-	for(int j=0; j<MAX_MUTIL_ITEM_NUM; j++)	//从后往前查找可用的ID号
+	for(int j=0; j<MAX_SINGLE_ITEM_NUM; j++)	//从后往前查找可用的ID号
 	{
-		uint8_t temp = compare_id(mMutil_Ring[j].ex_id.EX_ID , ex_id);
+		uint8_t temp = compare_id(mMutil_Ring->cache_frame[j].ex_id.EX_ID , ex_id);
 		//判断是否为同一个包的ID
 		if( SAME_PKG_ID == temp)	
 		{
 			ret_index = j;
 		} else if (SAME_ID == temp)
 		{
-			printf("mMutil_Ring[j].ex_id.EX_ID = %d,ex_id = %d ,j = %d \r\n",mMutil_Ring[j].ex_id.EX_ID , ex_id,j);
+			printf("mMutil_Ring[j].ex_id.EX_ID = %d,ex_id = %d ,j = %d \r\n",mMutil_Ring->cache_frame[j].ex_id.EX_ID , ex_id,j);
 			ret_index = 0xFE;//完全相同的帧直接返回0xFE
 		}
 	}
@@ -153,16 +154,17 @@ static uint8_t item_is_exist(CAN_HandleTypeDef hcan, uint32_t ex_id)
 	//没有接收完成的包，丢了结尾帧情况
 	if(ret_index == 0xFF)
 	{
-		for(int i=0; i<MAX_MUTIL_ITEM_NUM; i++)	//从后往前查找可用的ID号
+		for(int i=0; i<MAX_SINGLE_ITEM_NUM; i++)	//从后往前查找可用的ID号
 		{
-			if(mMutil_Ring[i].ex_id._bit.s1_addr == pmsg->_bit.s1_addr)	//如果存在相同地址
+			if(mMutil_Ring->cache_frame[i].ex_id._bit.s1_addr == pmsg->_bit.s1_addr)	//如果存在相同地址
 			{
-				if((mMutil_Ring[i].is_complete == 0)&&(mMutil_Ring[i].in_use != 0))	//没有接收完成
+				if((mMutil_Ring[i].is_complete == 0)&&(mMutil_Ring->cache_frame[i].in_use != 0))	//没有接收完成
 				{
 					//直接覆盖没有接收完整节点
-					mMutil_Ring[i].ex_id.EX_ID = ex_id;
-					mMutil_Ring[i].recv_pkg_num = 0;
-					mMutil_Ring[i].r_len = 0;
+					mMutil_Ring->cache_frame[i].in_use = 0;
+					mMutil_Ring->cache_frame[i].ex_id.EX_ID = ex_id;
+					mMutil_Ring->recv_pkg_num = 0;
+					mMutil_Ring->cache_frame[i].r_len = 0;
 					ret_index = i;
 				}
 			}
@@ -179,69 +181,54 @@ uint8_t can_recv_mutil_frame(CAN_HandleTypeDef hcan, void *can_msg)
 
 	uint8_t new_index = 0;	//申请索引
 	_pCan_Msg pmsg = can_msg;
-	mMutil_Ring = mMutil1_Ring;
+	mMutil_Ring = &mMutil1_Ring;
 	
+	
+//	debug_print("pmsg->ex_id.EX_ID == %d \r\n",pmsg->ex_id.EX_ID);
+//	debug_print("pmsg->ex_id._bit.msg_id == %d \r\n",pmsg->ex_id._bit.msg_id );
+//	debug_print("pmsg->ex_id._bit.pkg_id == %d \r\n",pmsg->ex_id._bit.pkg_id );
+//	debug_print("pmsg->ex_id._bit.is_end == %d \r\n",pmsg->ex_id._bit.is_end );
 	if(pmsg->ex_id._bit.pkg_id == 0)	//帧错误:多包pkg_id不能为0
 	{
 		return 0x81;
 	}
 	else
-	{
-
-//		printf("pmsg->ex_id.EX_ID == %d \r\n",pmsg->ex_id.EX_ID);
-//		printf("pmsg->ex_id._bit.msg_id == %d \r\n",pmsg->ex_id._bit.msg_id );
-//		printf("pmsg->ex_id._bit.pkg_id == %d \r\n",pmsg->ex_id._bit.pkg_id );
-//		printf("pmsg->ex_id._bit.is_end == %d \r\n",pmsg->ex_id._bit.is_end );
-		
+	{	
 		//判断当前id是否存在
-		if((new_index = item_is_exist(hcan, pmsg->ex_id.EX_ID)) == 0xFF)
+		new_index = item_is_exist(hcan, pmsg->ex_id.EX_ID);
+		if(new_index != 0xFE)
 		{
-			//不存在，则申请新表
-			new_index = find_null_node(hcan);			
-			//保存到缓存
-			mMutil_Ring[new_index].in_use = 0x01;	//使用中
-			mMutil_Ring[new_index].ex_id.EX_ID = pmsg->ex_id.EX_ID;
-			mMutil_Ring[new_index].r_len = pmsg->byte_count;
-			memcpy(mMutil_Ring[new_index].r_data, pmsg->data, pmsg->byte_count);
-			//接收帧数累加
-			mMutil_Ring[new_index].recv_pkg_num = mMutil_Ring[new_index].recv_pkg_num + 1;
-			//printf("r:%d p:%d\n", mMutil_Ring[new_index].recv_pkg_num, pmsg->ex_id._bit.pkg_id);
-			//debug_print("   rev_data:");
-			//debug_print_hex(pmsg->data, pmsg->byte_count);
-			return 0;
-		} else if (new_index != 0xFE) { //抛弃完全相同ID帧，如果两个帧ID完全相同，说明该帧已经被保存，没必要再次存储
 			//当时新帧的时候保存到缓存	
-			mMutil_Ring[new_index].in_use = 0x01;	//使用中
-			mMutil_Ring[new_index].r_len += pmsg->byte_count;
-			memcpy(mMutil_Ring[new_index].r_data + (pmsg->ex_id._bit.pkg_id - 1) * 8, pmsg -> data, pmsg -> byte_count);	
+			new_index = find_null_node(hcan);	
+			debug_print("new_index2 == %02X \r\n",new_index);
+			mMutil_Ring->cache_frame[new_index].in_use = 0x01;	//使用中
+			mMutil_Ring->cache_frame[new_index].r_len = pmsg->byte_count;
+			mMutil_Ring->cache_frame[new_index].pkg_id = pmsg->ex_id._bit.pkg_id;
+			//memcpy(mMutil_Ring[new_index].r_data + (pmsg->ex_id._bit.pkg_id - 1) * 8, pmsg -> data, pmsg -> byte_count);	
+			memcpy(mMutil_Ring->cache_frame[new_index].r_data, pmsg->data, pmsg->byte_count);
 			//接收帧数累加
-			mMutil_Ring[new_index].recv_pkg_num = mMutil_Ring[new_index].recv_pkg_num + 1;
-			//printf("r:%d p:%d\n", mMutil_Ring[new_index].recv_pkg_num, pmsg->ex_id._bit.pkg_id);
-			//debug_print("   rev_data:");
-			//debug_print_hex(pmsg->data, pmsg->byte_count);
-			//判断是否为末尾帧
-			
+			mMutil_Ring->recv_pkg_num = mMutil_Ring->recv_pkg_num + 1;
+			//判断是否为末尾帧	
 			if(pmsg->ex_id._bit.is_end == 0x01)	//末尾帧
 			{
-				if(mMutil_Ring[new_index].recv_pkg_num == pmsg->ex_id._bit.pkg_id)
+				//debug_print("recv_pkg_num = %d \r\n",mMutil_Ring->recv_pkg_num);
+				if(mMutil_Ring->recv_pkg_num == pmsg->ex_id._bit.pkg_id)
 				{ 
-					mMutil_Ring[new_index].is_complete = 0x01;	//接收完成
-					mMutil_Ring[new_index].ex_id.EX_ID = pmsg->ex_id.EX_ID;//将最后一帧的ID保存为长帧ID
-					//CRC校验留在协议解析，防止过多占用中断
-					debug_print("rev mMutil \r\n");
-					debug_print("new_index == %02X \r\n",new_index);
-					if(new_index>8)
-					{
-						printf("mMutil error \r\n");
-					}
+					mMutil_Ring->is_complete = 0x01;	//接收完成
+					mMutil_Ring->ex_id.EX_ID = pmsg->ex_id.EX_ID;//将最后一帧的ID保存为长帧ID
+					//CRC校验留在协议解析，防止过多占用中断	
 				}
 				else
 				{  
 					//清空节点
-					delete_item_node(hcan, new_index);
+					for(uint8_t i=0;i<MAX_SINGLE_ITEM_NUM;i++)
+						delete_item_node(hcan, new_index);
 				}
-			}
-			
+			}		
+		}
+		else
+		{
+			debug_print("err index = %d \r\n",new_index);
 		}
 	}
 	 
@@ -269,6 +256,28 @@ uint8_t can_recv_signal_frame(CAN_HandleTypeDef hcan, void *can_msg)
 }
 
 /*==================================================================================
+* 函 数 名： find_index_pkg
+* 参    数： pkg_id
+* 功能描述:  根据pkg id 从长包缓存中找到对应包号
+* 返 回 值： None
+* 备    注： 
+* 作    者： xiaozh
+* 创建时间： 2019-10-28 154449
+==================================================================================*/ 
+uint8_t find_index_pkg(uint8_t pkg_id)
+{
+	_Mutil_Ring * 	 mMutil_Ring;		//多包接收指针
+	mMutil_Ring = &mMutil1_Ring;
+	
+	for(uint8_t i=0;i<MAX_SINGLE_ITEM_NUM;i++)
+	{
+		if(mMutil_Ring->cache_frame[i].pkg_id == pkg_id )
+		{
+			return i ;
+		}
+	}
+}
+/*==================================================================================
 * 函 数 名： can_pop_one_frame
 * 参    数： _pRet_Msg
 * 功能描述:  can总线数据接收
@@ -277,44 +286,57 @@ uint8_t can_recv_signal_frame(CAN_HandleTypeDef hcan, void *can_msg)
 * 作    者： xiaozh
 * 创建时间： 2019-10-28 154449
 ==================================================================================*/ 
-static uint8_t datalen = 0;
+static uint8_t cur_index = 0;
 uint8_t can_pop_one_frame(CAN_HandleTypeDef hcan, void *ret_msg)
 {
+	//uint8_t cur_index;
 	_Can_Instance * mCan_Instance;
 	_Mutil_Ring * 	 mMutil_Ring;		//多包接收指针
 
 	_pRet_Msg pmsg = ret_msg;
 	
 	mCan_Instance = &mCan1_Instance,
-	mMutil_Ring = mMutil1_Ring;
+	mMutil_Ring = &mMutil1_Ring;
 
-	//先查询长帧
-	for(int i=0; i<MAX_MUTIL_ITEM_NUM; i++)	//从后往前查找可用的ID号
+	if(mMutil_Ring->is_complete == 0x01) 
 	{
-		if(mMutil_Ring[i].is_complete == 0x01)
+		mMutil_Ring->is_complete = 0;
+		pmsg->byte_count = 0;
+		//先查询长帧
+		for(int i=0; i<mMutil_Ring->recv_pkg_num+1 ; i++)	//从后往前查找可用的ID号
+		{		
+			cur_index = find_index_pkg(i+1);
+			if(mMutil_Ring->cache_frame[cur_index].in_use == 0x01)
+			{
+				//debug_print("mMutil_Ring->cache_frame[cur_index].r_len = %d ,cur_index = %d\r\n",mMutil_Ring->cache_frame[cur_index].r_len,cur_index);
+				memcpy(pmsg->data +pmsg->byte_count, mMutil_Ring->cache_frame[cur_index].r_data,  mMutil_Ring->cache_frame[cur_index].r_len);
+				pmsg->byte_count += mMutil_Ring->cache_frame[cur_index].r_len;
+				//清空节点
+				delete_item_node(hcan, cur_index);
+			}		
+		}
+		//if(mMutil_Ring->is_complete == 0x01)
 		{
-			pmsg->ex_id.EX_ID = mMutil_Ring[i].ex_id.EX_ID;
-			pmsg->byte_count = mMutil_Ring[i].r_len;
-			memcpy(pmsg->data, mMutil_Ring[i].r_data,  mMutil_Ring[i].r_len);
-			datalen = pmsg->byte_count;		
-			//清空节点
-			delete_item_node(hcan, i);
+			pmsg->ex_id.EX_ID = mMutil_Ring->ex_id.EX_ID;	
+			mMutil_Ring->recv_pkg_num = 0;
 			debug_print("mMutil_data:");
 			debug_print_hex(pmsg->data, pmsg->byte_count);
 			debug_print("\r\n");
+			debug_print("pmsg->byte_count = %d \r\n",pmsg->byte_count);
 			return pmsg->byte_count;
-		}
+		}			
 	}
+
 	
 	//查询短帧 
 	if(	mCan_Instance->p_ffunc->pop(mCan_Instance->Rcv_Fifo, ret_msg) != 0) 
 	{
 		//查找成功
-		datalen = pmsg->byte_count;
+//		datalen = pmsg->byte_count;
 		
 		debug_print("mMutil_data:");
-			debug_print_hex(pmsg->data, pmsg->byte_count);
-			debug_print("\r\n");
+		debug_print_hex(pmsg->data, pmsg->byte_count);
+		debug_print("\r\n");
 		return pmsg->byte_count;
 	}
 	

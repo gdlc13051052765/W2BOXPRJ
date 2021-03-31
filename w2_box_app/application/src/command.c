@@ -33,16 +33,16 @@ void can_frame_parse(void* ret_msg)
 	uint8_t buff[8] = {0};
 	uint8_t picbuff[128] = {0xff};
 	//判断数据合法性
-	debug_print("can_rev,");
-	debug_print("png_cmd:%4x, ", pmsg->ex_id._bit.png_cmd);
-	debug_print("s1_addr:%4x, ", pmsg->ex_id._bit.s1_addr);
-	debug_print("s2_addr:%4x, ", pmsg->ex_id._bit.s2_addr);
-	debug_print("is_end:%4x, ", pmsg->ex_id._bit.is_end);
-	debug_print("msg_id:%4x, ", pmsg->ex_id._bit.msg_id);
-	debug_print("lens=0x%02x, ", pmsg->byte_count);
-	debug_print("rev_data:");
-	debug_print_hex(pmsg->data, pmsg->byte_count);
-	debug_print("\n");
+//	debug_print("can_rev,");
+//	debug_print("png_cmd:%4x, ", pmsg->ex_id._bit.png_cmd);
+//	debug_print("s1_addr:%4x, ", pmsg->ex_id._bit.s1_addr);
+//	debug_print("s2_addr:%4x, ", pmsg->ex_id._bit.s2_addr);
+//	debug_print("is_end:%4x, ", pmsg->ex_id._bit.is_end);
+//	debug_print("msg_id:%4x, ", pmsg->ex_id._bit.msg_id);
+//	debug_print("lens=0x%02x, ", pmsg->byte_count);
+//	debug_print("rev_data:");
+//	debug_print_hex(pmsg->data, pmsg->byte_count);
+//	debug_print("\n");
 	
 	if(pmsg->ex_id._bit.s2_addr != mApp_Param.can_addr && pmsg->ex_id._bit.s2_addr !=0x0f)
 		return;
@@ -116,8 +116,7 @@ void can_frame_parse(void* ret_msg)
 					debug_print("关闭寻卡\r\n");
 					DisableTask(TASK_RFID_READ);//关闭寻卡任务
 				}
-					
-				
+								
 				buff[0] = BOX_SUCCESS;
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				debug_print("Android_BOX_CONTROL_CARD_READER \r\n");
@@ -172,10 +171,7 @@ void can_frame_parse(void* ret_msg)
 				buff[0] = BOX_SUCCESS;
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				dispStr.id = pmsg->data[0];
-				if(pmsg->byte_count>10)
-				{
-					debug_print("\r\n");
-				}
+
 				for(i=0;i<(pmsg->byte_count/8);i++)
 				{			
 					dispStr.cmd = pmsg->data[1];

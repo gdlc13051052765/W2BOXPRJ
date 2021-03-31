@@ -48,6 +48,9 @@ void systerm_init(void)
 	__enable_irq();    // 开启总中断
 	
 	//初始化OLED, 字库
+	oled_gt_assic_init();
+	show_read_tag(0,0);
+	HAL_Delay(10000);
 	oled_gt_init();
 //	oled_gt_assic_init();
 

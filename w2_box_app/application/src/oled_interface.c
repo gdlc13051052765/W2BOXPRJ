@@ -672,22 +672,21 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 	
 	
 	//清除显示缓存数据
-	if( pmsg.id !=screenid_bak)
-	{
-			screenid_bak = pmsg.id;
-			for(i=0;i<16;i++){  	
-				for(n=0;n<64;n++){
-					SCREEN[n][i] = 0;
-				} 
-		}
-	}
+//	if( pmsg.id !=screenid_bak)
+//	{
+//			screenid_bak = pmsg.id;
+//			for(i=0;i<16;i++){  	
+//				for(n=0;n<64;n++){
+//					SCREEN[n][i] = 0;
+//				} 
+//		}
+//	}
 	switch(pmsg.cmd )
 	{
 		case 01://显示灰度图		
 		case 02://显示黑白图
 			if((pmsg.endCol>pmsg.startCol )&&(pmsg.endRow >pmsg.startRow))
 			{
-				printf("显示start\r\n");
 				width = pmsg.endCol - pmsg.startCol +1 ;
 				if(width>128)
 					return 0x02;
@@ -718,7 +717,6 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 						}
 					}
 				}
-				printf("显示stop\r\n");
 			}
 			else 
 					return 0x02;
@@ -839,3 +837,6 @@ static uint8_t oled_repair_data(uint16_t *num,uint8_t *data,uint16_t *nextPack)
 	
 	return 0;
 }
+
+
+
