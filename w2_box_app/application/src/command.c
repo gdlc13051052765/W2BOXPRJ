@@ -3,6 +3,8 @@
 #include "oled_interface.h"
 #include "iap_protocols.h"
 
+
+static bool rfid_open_flag = false;//寻卡任务是否打开标记
 extern _App_Param mApp_Param;
 
 static void can_send_sw_and_hw_to_android(char cmd, char msg_id);
@@ -21,6 +23,7 @@ static void iap_check_ack(uint32_t can_id, uint8_t ret_reuslt, uint16_t ret_id, 
 * 作    者： xiaozh
 * 创建时间： 2019-09-24 162950
 ==================================================================================*/
+extern uint32_t tick_num;
 void can_frame_parse(void* ret_msg)
 {
 	_pRet_Msg pmsg = ret_msg;
@@ -29,7 +32,7 @@ void can_frame_parse(void* ret_msg)
 	uint16_t toal_num = 0;
 	uint16_t flash_addr = 0;
 	uint8_t ret_s = 0,i;
-	
+	uint32_t timebak = 0;
 	uint8_t buff[8] = {0};
 	uint8_t picbuff[128] = {0xff};
 	//判断数据合法性
@@ -46,6 +49,15 @@ void can_frame_parse(void* ret_msg)
 	
 	if(pmsg->ex_id._bit.s2_addr != mApp_Param.can_addr && pmsg->ex_id._bit.s2_addr !=0x0f)
 		return;
+	//有长包缓存在，先把寻卡任务关闭
+	if(query_mutil_num()&(rfid_open_flag==true))
+	{
+		DisableTask(TASK_RFID_READ);//关闭寻卡任务
+	}
+	if(!(query_mutil_num())&(rfid_open_flag==true))//长包缓存处理完成，如果需要寻卡打开寻卡任务
+	{
+		EnableTask(TASK_RFID_READ);//打开
+	}
 	 
 	//进行协议解析
 	if (pmsg->ex_id._bit.s1_addr != 0xD)//非cc过来的数据
@@ -110,13 +122,16 @@ void can_frame_parse(void* ret_msg)
 				mApp_Param.rfid_retry_count = (pmsg->data[0] >> 4);
 				if(pmsg->data[1]&0x80){
 					EnableTask(TASK_RFID_READ);//打开
+					rfid_open_flag = true;
 					debug_print("打开寻卡\r\n");
 				}
 				else{
 					debug_print("关闭寻卡\r\n");
+					rfid_open_flag = false;
 					DisableTask(TASK_RFID_READ);//关闭寻卡任务
 				}
-								
+					
+				
 				buff[0] = BOX_SUCCESS;
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				debug_print("Android_BOX_CONTROL_CARD_READER \r\n");
@@ -168,10 +183,16 @@ void can_frame_parse(void* ret_msg)
 				debug_print_hex(pmsg->data, pmsg->byte_count);
 				debug_print("\r\n");
 				
+				timebak = tick_num;
+			//	printf("disp start = %d \r\n",tick_num);
+				
 				buff[0] = BOX_SUCCESS;
 				can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				dispStr.id = pmsg->data[0];
-
+				if(pmsg->byte_count>10)
+				{
+					debug_print("\r\n");
+				}
 				for(i=0;i<(pmsg->byte_count/8);i++)
 				{			
 					dispStr.cmd = pmsg->data[1];
@@ -192,7 +213,7 @@ void can_frame_parse(void* ret_msg)
 					}
 					buff[0]  = pOled_Func->dispPic_opt(dispStr);
 				}
-								
+				//	printf("disp time = %d \r\n",tick_num-timebak);					
 			//	can_send_one_pkg_to_Android_by_link(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id, buff, 1);
 				break;
 			}
@@ -208,7 +229,7 @@ void can_frame_parse(void* ret_msg)
 				DisableTask(TASK_RFID_READ);//关闭寻卡任务
 				DisableTask(TASK_ADC_CONV);//关闭AD任务
 				
-				printf("Android_BOX_UPDATE_INFO \r\n");
+				debug_print("Android_BOX_UPDATE_INFO \r\n");
 				ret_s = pIap_Func->info_opt(pmsg->data, &ret_id);
 				iap_simply_ack(pmsg->ex_id.EX_ID, ret_s, ret_id);
 				oled_gt_assic_init();//初始化成box自主显示
@@ -332,7 +353,7 @@ void can_frame_parse(void* ret_msg)
 		switch(pmsg->ex_id._bit.png_cmd) {
 			case CC_BOX_HEART:
 			{
-				printf("CC_BOX_HEART \r\n");
+				debug_print("CC_BOX_HEART \r\n");
 				can_sed_heartbeat(pmsg->ex_id._bit.png_cmd, pmsg->ex_id._bit.msg_id);
 				break;
 			}

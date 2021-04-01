@@ -153,12 +153,12 @@ static uint8_t oled_load_picture_exflash(const uint8_t *data,uint16_t *addr)
 				
 					if(oled_picture_compare(r_buff, data, MAX_DISP_LEN) == 0x01)
 					{
-						printf("read ok \r\n");
+						debug_print("read ok \r\n");
 						return 0;
 					}
 					else
 					{
-						printf("read fail \r\n");
+						debug_print("read fail \r\n");
 					}
 				}
 			}	
@@ -672,15 +672,15 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 	
 	
 	//清除显示缓存数据
-//	if( pmsg.id !=screenid_bak)
-//	{
-//			screenid_bak = pmsg.id;
-//			for(i=0;i<16;i++){  	
-//				for(n=0;n<64;n++){
-//					SCREEN[n][i] = 0;
-//				} 
-//		}
-//	}
+	if( pmsg.id !=screenid_bak)
+	{
+			screenid_bak = pmsg.id;
+			for(i=0;i<16;i++){  	
+				for(n=0;n<64;n++){
+					SCREEN[n][i] = 0;
+				} 
+		}
+	}
 	switch(pmsg.cmd )
 	{
 		case 01://显示灰度图		
@@ -717,6 +717,7 @@ static uint8_t oled_disp_flash_picture(_Disp_Param pmsg )
 						}
 					}
 				}
+
 			}
 			else 
 					return 0x02;
@@ -837,6 +838,3 @@ static uint8_t oled_repair_data(uint16_t *num,uint8_t *data,uint16_t *nextPack)
 	
 	return 0;
 }
-
-
-

@@ -494,7 +494,7 @@ void rfid_find_tag(void* info)
 //====================================================================================================
 void scan_rfid_tag(void)
 {
-	platformDelay(10);//可减少延时？？	
+	//platformDelay(10);//可减少延时？？	
 
   rfid_find_tag(&mTag_Context);
 }
@@ -508,9 +508,18 @@ void scan_rfid_tag(void)
 * 作    者：  xiaozh
 * 创建时间： 2019-09-24 163737
 ==================================================================================*/
+extern uint32_t tick_num;
+
 void rfid_loop_read_task(void* argv)
 {
-	scan_rfid_tag(); 
+	uint32_t timebak = 0;
+	
+	DisableTask(TASK_RFID_READ);//关闭
+	timebak = tick_num;
+//	printf("raid task start = %d \r\n",tick_num);
+	scan_rfid_tag();
+//	printf("raid task time = %d \r\n",tick_num -timebak);
+	EnableTask(TASK_RFID_READ);//打开
 }
 
 /*==================================================================================

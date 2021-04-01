@@ -283,7 +283,7 @@ static void send_door_status_msg(void)
 {
 	uint8_t send_buff[8] = {0};
 	
-	printf("door status change");
+	debug_print("door status change");
 	send_buff[0] = get_door_state();	//ÃÅ×´Ì¬
 //	send_buff[0] = BOX_SUCCESS;
 	can_upload_event_to_android(BOX_Android_UP_DOOR_STATUS, send_buff, 1);
@@ -299,7 +299,7 @@ static void send_door_status_msg(void)
 ==================================================================================*/
 void loop_door_status_task(void* argv)
 {
-	//uint8_t send_buff;
+	uint8_t send_buff;
 
 	if(doorStateBak !=READ_HALL_STATUE())
 	{

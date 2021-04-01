@@ -144,7 +144,7 @@ void check_chip_status(void)
 		count++;
 		chip_status = gt32_read_status();
 		if(count>1000){
-			printf("flash write fail \r\n");
+			debug_print("flash write fail \r\n");
 			break;
 		}	
 	}while(chip_status&0x01);

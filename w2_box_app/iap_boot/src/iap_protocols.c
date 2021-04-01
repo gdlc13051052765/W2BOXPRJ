@@ -460,7 +460,7 @@ static uint8_t iap_frame_data(const uint8_t* src_buff, uint16_t *ret_result)
 	 
 	w_addr = pmsg->DataFrame.FrameStep * FRAME_LENGTH;	//¼ÆËãÐ´ÈëµØÖ·
 	
-	debug_print("iap_frame_data()-> FrameStep:%d; frame_step=%d\r\n",pmsg->DataFrame.FrameStep,mIap_Param.frame_step);
+	debug_print("iap_frame_data()-> FrameStep:%04x; frame_step=%04x\r\n",pmsg->DataFrame.FrameStep,mIap_Param.frame_step);
 	if((pmsg->DataFrame.FrameStep == (mIap_Param.frame_step+1))&&
 		 pmsg->DataFrame.CRC16 == crc16_ccitt(src_buff, FRAME_LENGTH-2)&&
 		 pmsg->DataFrame.SoftVer == mIap_Param.fw_msg.MsgFrame.AppVer)

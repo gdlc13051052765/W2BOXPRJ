@@ -2,7 +2,7 @@
 #include "frame_parse.h"
 #include "iap_protocols.h"
 #include "st_crc.h"
-
+#include "application.h"
 
 static _Lost_Pkg lost_pkg_record[LOST_MAX_LEN] = 
 {
@@ -396,7 +396,7 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id ,uint16_t *toal_num)
 				//校验版本
 				if(pthis->fw_msg.MsgFrame.AppVer != pmsg->DataFrame.SoftVer)
 				{
-					printf("ver id = %d\r\n",cur_pkg_step);
+					debug_print("ver id = %d\r\n",cur_pkg_step);
 					*fw_id = cur_pkg_step; //不能使用读取的数据
 					return ret_need_pkg;
 				}
@@ -404,14 +404,14 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id ,uint16_t *toal_num)
 				//校验帧区分
 				if(pthis->fw_msg.MsgFrame.board_type != pmsg->DataFrame.FrameType)
 				{ 
-					printf("zhen id = %d\r\n",cur_pkg_step);
+					debug_print("zhen id = %d\r\n",cur_pkg_step);
 					LOST_RECORD(pmsg->DataFrame.FrameStep); 
 					continue; //继续查找
 				}
 				
 				if(pmsg->DataFrame.FrameStep != cur_pkg_step)
 				{
-					printf("lost id = %d\r\n",cur_pkg_step);
+					debug_print("lost id = %d\r\n",cur_pkg_step);
 					LOST_RECORD(pmsg->DataFrame.FrameStep); 
 					continue; //继续查找
 				} 
@@ -426,7 +426,7 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id ,uint16_t *toal_num)
 					fw_ids = cur_pkg_step; 
 					*fw_id = fw_ids;
 				}			
-				printf("lost id = %d\r\n",cur_pkg_step);
+				debug_print("lost id = %d\r\n",cur_pkg_step);
 				LOST_RECORD(pmsg->DataFrame.FrameStep); 
 				continue; //继续查找
 			}
@@ -445,16 +445,16 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id ,uint16_t *toal_num)
 	if(GET_LOST_RECORD() != 0)	//丢包
 	{
 		//如果固件不完整返回不完整信息
-//		if(((pthis->fw_msg.MsgFrame.AppTotalPackage/GET_LOST_RECORD())*100)> MAX_MASS_LOST_LEVEL)
-//		{
-//			printf("丢包率过高\n");
-//			//*fw_id = fw_ids;
-//			return  ret_mass_lost; //丢包率过高
-//		}
-//		else
+		if(((pthis->fw_msg.MsgFrame.AppTotalPackage/GET_LOST_RECORD())*100)> MAX_MASS_LOST_LEVEL)
+		{
+			debug_print("丢包率过高\n");
+			//*fw_id = fw_ids;
+			return  ret_mass_lost; //丢包率过高
+		}
+		else
 		{
 			*fw_id = fw_ids;
-			printf("包数据不完整\n");
+			debug_print("包数据不完整\n");
 			return ret_rev_pkg_id;
 		}
 	}
@@ -462,7 +462,7 @@ uint8_t check_firmware_lost(void *instance, uint16_t *fw_id ,uint16_t *toal_num)
 	if(fw_src_crc32 != pthis->fw_msg.MsgFrame.AppCrc32)	
 	{
 		//全局校验失败，写入失败原因
-		printf("全局效验失败\n");
+		debug_print("全局效验失败\n");
 		return ret_check_error;
 	}	 
 	return ret_ok;

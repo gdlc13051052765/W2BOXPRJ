@@ -48,11 +48,10 @@ void systerm_init(void)
 	__enable_irq();    // 开启总中断
 	
 	//初始化OLED, 字库
-	oled_gt_assic_init();
-	show_read_tag(0,0);
-	HAL_Delay(10000);
-	oled_gt_init();
 //	oled_gt_assic_init();
+//	show_read_tag(0,0);
+//	HAL_Delay(10000);
+	oled_gt_init();
 
 //	//关门
 //	door_close();
@@ -67,7 +66,7 @@ void systerm_init(void)
 	//系统初始化完成
 	mApp_Param.sys_init_complete = 0x01;
 	mApp_Param.rfid_retry_count = 0x02;
-	printf("slave box init complete\n");
+	debug_print("slave box init complete\n");
 	
 	//运行系统中断
 	HAL_Delay(100+((mApp_Param.can_addr<10)?(mApp_Param.can_addr*10):(100)));

@@ -9,6 +9,7 @@ extern void test_loop_task(void* argv);
 extern void box_report_status_task(void* argv);
 extern void loop_door_status_task(void* argv);
 
+uint32_t tick_num =0;
 /*==================================================================================
 * 函 数 名： TaskComps
 * 参    数： None
@@ -134,6 +135,9 @@ void TaskSetTimes(TASK_LIST Task , uint32_t Times)
 void TaskRemarks(void)
 {
 	uint8_t i = 0;
+	
+	tick_num++;
+	
 	for (i=0; i<TASKS_MAX; i++)          // 逐个任务时间处理
 	{
 		if(TaskComps[i].RunState == TASK_ENABLE)		//如果使能了当前任务检测，则进行检测操作
